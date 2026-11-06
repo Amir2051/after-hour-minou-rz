@@ -20,7 +20,9 @@ import {
   Shield,
   ChevronRight,
   PlusCircle,
-  Crown
+  Crown,
+  Trash2,
+  X
 } from 'lucide-react';
 import { GameModeId, IntensityLevel, GameSettings } from '../types';
 import { StoredPlayers, storageService } from '../services/storage';
@@ -47,10 +49,13 @@ export const GameHub: React.FC<GameHubProps> = ({
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   const customCardsCount = storageService.getCustomCards().length;
   const favoritesCount = storageService.getFavorites().length;
   const savedMemories = storageService.getMemories();
+  const gameHistory = storageService.getHistory();
 
   interface GameMeta {
     id: GameModeId;
@@ -326,6 +331,21 @@ export const GameHub: React.FC<GameHubProps> = ({
           <div className="text-xs font-semibold text-white">Challenge Wheel</div>
           <div className="text-[10px] text-slate-400">Spin for instant surprises</div>
         </button>
+        <button
+          onClick={() => {
+            soundService.playClick();
+            setHistoryVersion(value => value + 1);
+            setShowHistoryModal(true);
+          }}
+          className="p-3.5 rounded-2xl bg-white/5 border border-rose-400/20 hover:border-rose-300/50 text-left transition group active:scale-98"
+        >
+          <div className="flex items-center justify-between text-rose-300 mb-1">
+            <History className="w-4 h-4" />
+            <span className="text-[10px] font-semibold text-rose-200">{gameHistory.length} saved</span>
+          </div>
+          <div className="text-xs font-semibold text-white">Game History</div>
+          <div className="text-[10px] text-slate-400">Revisit your completed nights</div>
+        </button>
       </div>
 
       {/* Filter Tabs (Functional segmented controls) */}
@@ -404,6 +424,72 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         ))}
       </div>
+
+
+      {/* Completed Game History */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-xl rounded-3xl glass-panel-glow p-6 text-slate-100 shadow-2xl relative my-6">
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"
+              aria-label="Close game history"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <History className="w-4 h-4 text-rose-300" />
+              <span className="text-xs uppercase tracking-widest text-rose-300 font-semibold">Your nights together</span>
+            </div>
+            <h2 className="text-2xl font-bold font-serif text-white tracking-tight">Game History</h2>
+            <p className="text-xs text-slate-300 mt-1">Completed sessions saved on this device, newest first.</p>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-slate-400 font-mono">{gameHistory.length} of 100 sessions saved</span>
+              {gameHistory.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (!window.confirm('Clear all saved game history from this device?')) return;
+                    storageService.clearHistory();
+                    setHistoryVersion(value => value + 1);
+                  }}
+                  className="inline-flex items-center gap-1 text-rose-300 hover:text-rose-200"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear history
+                </button>
+              )}
+            </div>
+            <div className="mt-4 max-h-[55vh] overflow-y-auto space-y-2 pr-1">
+              {gameHistory.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[.04] py-10 text-center">
+                  <History className="mx-auto mb-2 h-7 w-7 text-slate-500" />
+                  <p className="text-sm font-semibold text-white">No completed games yet</p>
+                  <p className="mt-1 text-xs text-slate-400">Finish a game and your scores will appear here.</p>
+                </div>
+              ) : (
+                gameHistory.map((entry, index) => (
+                  <div key={entry.timestamp + '-' + index} className="rounded-2xl border border-white/10 bg-white/[.045] p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{entry.gameMode.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase())}</p>
+                        <p className="mt-0.5 text-[10px] text-slate-400">{new Date(entry.timestamp).toLocaleString()}</p>
+                      </div>
+                      <span className="rounded-full border border-rose-300/20 bg-rose-400/10 px-2.5 py-1 text-[10px] font-semibold text-rose-200">{entry.roundsPlayed} rounds</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="text-slate-300">{entry.player1Name || players.player1} <strong className="text-rose-300">{entry.player1Score ?? 0}</strong> · {entry.player2Name || players.player2} <strong className="text-purple-300">{entry.player2Score ?? 0}</strong></span>
+                      <span className="text-slate-400">{entry.winner === 'Tie' ? 'It’s a tie' : entry.winner ? entry.winner + ' won' : 'Session saved'}</span>
+                    </div>
+                    {typeof entry.compatibilityScore === 'number' && (
+                      <p className="mt-2 text-[10px] font-semibold text-rose-300">Couple synergy: {entry.compatibilityScore}%</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <button onClick={() => setShowHistoryModal(false)} className="mt-5 w-full rounded-xl bg-white/10 py-2.5 text-xs font-semibold text-white transition hover:bg-white/15">Close History</button>
+          </div>
+        </div>
+      )}
 
       {/* Memories Journal Modal */}
       {showMemoriesModal && (

@@ -61,6 +61,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
   const currentQ = filteredDeck[questionIndex % filteredDeck.length];
 
   const handleShuffle = () => {
+    setPlayedCount(0);
     setQuestionIndex(Math.floor(Math.random() * filteredDeck.length));
     setP1Vote(null);
     setP2Vote(null);
@@ -278,6 +279,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
           setP2Vote(null);
           setPhase('p1');
           setMatches(0);
+          setPlayedCount(0);
           setScores({ player1: 0, player2: 0 });
         }}
         onReturnHome={onExit}

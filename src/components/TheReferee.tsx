@@ -32,7 +32,7 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed,
     event.preventDefault();
     const question = prompt.trim();
     if (!question || isLoading || !isEnabled) return;
-    if (!adultConfirmed && /\b(spicy|adult|intimate|sexual|erotic|nsfw|18\\+)\b/i.test(question)) {
+    if (!adultConfirmed && /\b(spicy|adult|intimate|sexual|erotic|nsfw|18\+)\b/i.test(question)) {
       setError('Confirm that both players are 18+ before requesting adult prompts.');
       onRequestAgeGate();
       return;

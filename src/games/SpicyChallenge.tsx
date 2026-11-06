@@ -58,7 +58,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
     if (selectedCategory !== 'Random Mix' && selectedCategory !== 'All') {
       list = list.filter(c => matchesCategoryFilter(c.category, selectedCategory));
     }
-    return list.length > 0 ? list : SPICY_CHALLENGE_DECK;
+    return list.length > 0 ? list : SPICY_CHALLENGE_DECK.filter(c => c.intensity !== 'spicy');
   }, [settings.adultConfirmed, settings.intensity, selectedCategory]);
 
   const currentChallenge = filteredChallenges[cardIndex % filteredChallenges.length];

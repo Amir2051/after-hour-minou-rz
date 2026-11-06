@@ -282,6 +282,7 @@ export const WouldYouRather: React.FC<WouldYouRatherProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="would_you_rather"
         gameTitle="Would You Rather?"
         player1Name={players.player1}
         player2Name={players.player2}

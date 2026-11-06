@@ -77,7 +77,7 @@ export default function App() {
   };
 
   return (
-    <div className="after-hours-shell text-[#f7f3fb] flex flex-col justify-between selection:bg-pink-500/30 selection:text-white">
+    <div className="after-hours-shell min-h-screen text-[#f7f3fb] flex flex-col justify-between selection:bg-pink-500/30 selection:text-white">
       {/* Top Navbar */}
       <Navbar
         currentView={currentView}

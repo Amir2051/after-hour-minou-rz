@@ -6,9 +6,10 @@ import { StoredPlayers } from '../services/storage';
 interface TheRefereeProps {
   players: StoredPlayers;
   adultConfirmed: boolean;
+  onRequestAgeGate: () => void;
 }
 
-export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed }) => {
+export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed, onRequestAgeGate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
   const [scope, setScope] = useState<RefereeScope>('player1');
@@ -30,6 +31,11 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed 
     event.preventDefault();
     const question = prompt.trim();
     if (!question || isLoading || !isEnabled) return;
+    if (!adultConfirmed && /\\b(spicy|adult|intimate|sexual|erotic|nsfw|18\\+)\\b/i.test(question)) {
+      setError('Confirm that both players are 18+ before requesting adult prompts.');
+      onRequestAgeGate();
+      return;
+    }
     setError('');
     setIsLoading(true);
     setMessages(previous => [...previous, { role: 'user', text: question, createdAt: Date.now() }]);
@@ -52,7 +58,7 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed 
           partnerName: scope === 'player1' ? players.player2 : players.player1,
           privateMemories,
           sharedMemories,
-          adultContent: adultConfirmed && /spicy|adult|intimate|sexual/i.test(question),
+          adultContent: adultConfirmed,
         }),
       });
       const data = await response.json();
@@ -129,7 +135,7 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed 
                     ['player2', players.player2],
                     ['shared', 'Shared'],
                   ] as [RefereeScope, string][]).map(([value, label]) => (
-                    <button key={value} onClick={() => { setScope(value); setError(''); }} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${scope === value ? 'border-rose-300/50 bg-rose-500/20 text-rose-100' : 'border-white/10 bg-white/5 text-slate-400 hover:text-white'}`}>
+                    <button key={value} onClick={() => { if (isLoading) return; setScope(value); setMessages([]); setError(''); }} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${scope === value ? 'border-rose-300/50 bg-rose-500/20 text-rose-100' : 'border-white/10 bg-white/5 text-slate-400 hover:text-white'}`}>
                       {label}
                     </button>
                   ))}

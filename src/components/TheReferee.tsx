@@ -6,10 +6,11 @@ import { StoredPlayers } from '../services/storage';
 interface TheRefereeProps {
   players: StoredPlayers;
   adultConfirmed: boolean;
+  gameMode: string;
   onRequestAgeGate: () => void;
 }
 
-export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed, onRequestAgeGate }) => {
+export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed, gameMode, onRequestAgeGate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
   const [scope, setScope] = useState<RefereeScope>('player1');
@@ -53,6 +54,8 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: question,
+          gameMode,
+          history: messages.slice(-8).map(message => ({ role: message.role, text: message.text })),
           scope,
           activePlayer: scopeLabel,
           partnerName: scope === 'player1' ? players.player2 : players.player1,
@@ -139,7 +142,7 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed,
                       {label}
                     </button>
                   ))}
-                  <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-500">{scopeLabel} context</span>
+                  <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-500">{scopeLabel} · {gameMode === 'hub' ? 'Game night' : gameMode.replaceAll('_', ' ')}</span>
                 </div>
 
                 <div className="min-h-[210px] flex-1 space-y-3 overflow-y-auto px-5 py-4">

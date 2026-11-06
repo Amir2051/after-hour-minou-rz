@@ -165,7 +165,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -174,7 +173,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -183,7 +181,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -192,7 +189,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
       </main>

@@ -31,6 +31,7 @@ interface GameCardProps {
 
 export const GameCard: React.FC<GameCardProps> = ({
   category,
+  cardId,
   intensity = 'medium',
   title,
   typeLabel,
@@ -220,7 +221,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           >
             {/* Subtle background ambient vector artwork */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <CardArtwork category={category} intensity={intensity} className="w-full h-full" />
+              <CardArtwork category={category} intensity={intensity} artworkId={cardId} className="w-full h-full" />
             </div>
 
             {/* Subtle floating ember glow */}

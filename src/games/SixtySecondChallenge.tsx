@@ -187,6 +187,7 @@ export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="sixty_seconds"
         gameTitle="60-Second Couple Challenges"
         player1Name={players.player1}
         player2Name={players.player2}

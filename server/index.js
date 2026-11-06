@@ -17,11 +17,13 @@ const requestWindows = new Map();
 app.use('/api/referee', (req, res, next) => {
   const key = req.ip || 'unknown';
   const now = Date.now();
-  const windowStart = requestWindows.get(key) || now;
-  if (now - windowStart > 60_000) requestWindows.set(key, now);
-  else if ((req.rateCount = (req.rateCount || 0) + 1) > 18) {
-    return res.status(429).json({ error: 'The Referee needs a short breather. Try again in a minute.' });
+  const bucket = requestWindows.get(key);
+  if (!bucket || now - bucket.startedAt > 60_000) {
+    requestWindows.set(key, { startedAt: now, count: 1 });
+    return next();
   }
+  bucket.count += 1;
+  if (bucket.count > 18) return res.status(429).json({ error: 'The Referee needs a short breather. Try again in a minute.' });
   next();
 });
 

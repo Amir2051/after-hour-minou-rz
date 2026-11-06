@@ -1,0 +1,490 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState } from 'react';
+import {
+  Flame,
+  Heart,
+  HelpCircle,
+  Split,
+  MessageCircleQuestion,
+  Sparkles,
+  Users,
+  Timer,
+  History,
+  Dices,
+  Play,
+  Bookmark,
+  Shield,
+  ChevronRight,
+  PlusCircle,
+  Crown
+} from 'lucide-react';
+import { GameModeId, IntensityLevel, GameSettings } from '../types';
+import { StoredPlayers, storageService } from '../services/storage';
+import { soundService } from '../services/audio';
+
+interface GameHubProps {
+  players: StoredPlayers;
+  settings: GameSettings;
+  onSelectGame: (gameId: GameModeId) => void;
+  onOpenPlayerSetup: () => void;
+  onOpenCustomBuilder: () => void;
+  onOpenVip: () => void;
+  onRequestAgeGate: () => void;
+}
+
+export const GameHub: React.FC<GameHubProps> = ({
+  players,
+  settings,
+  onSelectGame,
+  onOpenPlayerSetup,
+  onOpenCustomBuilder,
+  onOpenVip,
+  onRequestAgeGate,
+}) => {
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
+  const [showMemoriesModal, setShowMemoriesModal] = useState(false);
+
+  const customCardsCount = storageService.getCustomCards().length;
+  const favoritesCount = storageService.getFavorites().length;
+  const savedMemories = storageService.getMemories();
+
+  interface GameMeta {
+    id: GameModeId;
+    title: string;
+    tagline: string;
+    category: 'spicy' | 'romantic' | 'speed' | 'classic';
+    intensity: IntensityLevel;
+    icon: React.ReactNode;
+    color: string;
+    approxMinutes: number;
+    description: string;
+    isSpicyOnly?: boolean;
+  }
+
+  const games: GameMeta[] = [
+    {
+      id: 'truth_or_dare',
+      title: 'Truth or Dare',
+      tagline: 'Classic with a seductive twist',
+      category: 'classic',
+      intensity: settings.intensity,
+      icon: <Dices className="w-5 h-5" />,
+      color: 'from-pink-600 to-rose-600',
+      approxMinutes: 15,
+      description: 'Random selections, custom categories, hilarious truths, and electrifying dares.',
+    },
+    {
+      id: 'how_well_know_me',
+      title: 'How Well Do You Know Me?',
+      tagline: 'Compatibility test & partner guessing',
+      category: 'romantic',
+      intensity: 'mild',
+      icon: <HelpCircle className="w-5 h-5" />,
+      color: 'from-purple-600 to-pink-600',
+      approxMinutes: 12,
+      description: 'One answers secretly, the other guesses. Reveal actual truth and earn synergy points.',
+    },
+    {
+      id: 'would_you_rather',
+      title: 'Would You Rather?',
+      tagline: 'Intimate & hilarious dilemmas',
+      category: 'classic',
+      intensity: 'medium',
+      icon: <Split className="w-5 h-5" />,
+      color: 'from-rose-600 to-amber-600',
+      approxMinutes: 10,
+      description: 'Both choose in secret, reveal together, and measure your instinctive alignment.',
+    },
+    {
+      id: 'never_have_i_ever',
+      title: 'Never Have I Ever',
+      tagline: 'Confessions, blush moments & secrets',
+      category: 'classic',
+      intensity: 'medium',
+      icon: <MessageCircleQuestion className="w-5 h-5" />,
+      color: 'from-fuchsia-600 to-pink-600',
+      approxMinutes: 12,
+      description: 'Find out the untold stories, embarrassing habits, and wild moments from their past.',
+    },
+    {
+      id: 'spicy_challenge',
+      title: 'The Spicy Challenge',
+      tagline: 'Consent-first adult intimacy exploration',
+      category: 'spicy',
+      intensity: 'spicy',
+      icon: <Flame className="w-5 h-5" />,
+      color: 'from-red-600 via-rose-600 to-pink-600',
+      approxMinutes: 20,
+      description: 'Flirty touches, teasing whispers, and sensual activities for consenting adults.',
+      isSpicyOnly: true,
+    },
+    {
+      id: 'who_is_more_likely',
+      title: 'Who Is More Likely To?',
+      tagline: 'Couples dynamic showdown',
+      category: 'classic',
+      intensity: 'mild',
+      icon: <Users className="w-5 h-5" />,
+      color: 'from-indigo-600 to-purple-600',
+      approxMinutes: 10,
+      description: 'Who is more chaotic? Who plans the best surprises? Vote and see if your thoughts match.',
+    },
+    {
+      id: 'challenge_wheel',
+      title: 'Couples Challenge Wheel',
+      tagline: 'Spin the wheel of romantic destiny',
+      category: 'speed',
+      intensity: 'medium',
+      icon: <Sparkles className="w-5 h-5" />,
+      color: 'from-amber-600 to-rose-600',
+      approxMinutes: 15,
+      description: 'Truth, Dare, Kiss, Compliment, and Wild Card. Spin with real physics & audio.',
+    },
+    {
+      id: 'finish_the_sentence',
+      title: 'Finish the Sentence',
+      tagline: 'Heartfelt vulnerability & sweet vows',
+      category: 'romantic',
+      intensity: 'medium',
+      icon: <Heart className="w-5 h-5" />,
+      color: 'from-pink-600 to-purple-600',
+      approxMinutes: 15,
+      description: 'Speak your unspoken thoughts. Save your most precious answers to your shared journal.',
+    },
+    {
+      id: 'memory_lane',
+      title: 'Memory Lane',
+      tagline: 'Relive your journey and biggest sparks',
+      category: 'romantic',
+      intensity: 'mild',
+      icon: <History className="w-5 h-5" />,
+      color: 'from-violet-600 to-pink-600',
+      approxMinutes: 15,
+      description: 'From your awkward first date to shared milestones and dreams for five years from now.',
+    },
+    {
+      id: 'sixty_seconds',
+      title: '60-Second Challenges',
+      tagline: 'Fast-paced countdown couple games',
+      category: 'speed',
+      intensity: 'medium',
+      icon: <Timer className="w-5 h-5" />,
+      color: 'from-rose-600 to-orange-600',
+      approxMinutes: 10,
+      description: 'High energy timed challenges, rapid-fire questions, and uninterrupted eye-contact tests.',
+    },
+  ];
+
+  const filteredGames = games.filter(g => {
+    if (selectedFilter === 'spicy') return g.category === 'spicy' || g.intensity === 'spicy';
+    if (selectedFilter === 'romantic') return g.category === 'romantic';
+    if (selectedFilter === 'speed') return g.category === 'speed';
+    return true;
+  });
+
+  const handleGameClick = (game: GameMeta) => {
+    soundService.playClick();
+    if (game.isSpicyOnly && !settings.adultConfirmed) {
+      onRequestAgeGate();
+      return;
+    }
+    onSelectGame(game.id);
+  };
+
+  const stageLabels: Record<string, string> = {
+    dating: 'Dating',
+    new_relationship: 'New Flame',
+    long_term: 'Long-Term Partners',
+    engaged: 'Engaged',
+    married: 'Married Life',
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10">
+      {/* Hero Welcome Banner */}
+      <div className="relative rounded-3xl glass-panel-glow p-6 sm:p-10 mb-8 overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-pink-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-2xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs uppercase tracking-widest text-pink-400 font-semibold flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Two Players · No Limits · Just Good Times
+            </span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight leading-tight text-glow-pink">
+            Turn Up The Heat Together.
+          </h1>
+
+          <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+            Playing as <strong className="text-pink-300">{players.player1}</strong> &amp; <strong className="text-purple-300">{players.player2}</strong> ({stageLabels[settings.relationshipStage] || 'Couple'}). Pass the phone, flirt fearlessly, and explore each other.
+          </p>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => handleGameClick(games[0])}
+              className="py-3 px-6 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 text-white font-semibold text-xs sm:text-sm shadow-xl shadow-pink-900/40 hover:from-pink-500 hover:to-rose-500 active:scale-95 transition flex items-center gap-2"
+            >
+              <Play className="w-4 h-4 fill-white" />
+              <span>Quick Start · Truth or Dare</span>
+            </button>
+
+            <button
+              onClick={() => {
+                soundService.playClick();
+                onOpenPlayerSetup();
+              }}
+              className="py-3 px-5 rounded-2xl bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 text-xs sm:text-sm font-medium transition"
+            >
+              Adjust Players &amp; Rules
+            </button>
+
+            {savedMemories.length > 0 && (
+              <button
+                onClick={() => {
+                  soundService.playClick();
+                  setShowMemoriesModal(true);
+                }}
+                className="py-3 px-4 rounded-2xl bg-pink-950/30 border border-pink-500/20 text-pink-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5"
+              >
+                <Bookmark className="w-4 h-4 text-pink-400" />
+                <span>Memories Journal ({savedMemories.length})</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Action Ribbon */}
+      <div className="mb-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => {
+            soundService.playClick();
+            onOpenCustomBuilder();
+          }}
+          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500/30 text-left transition group active:scale-98"
+        >
+          <div className="flex items-center justify-between text-pink-400 mb-1">
+            <PlusCircle className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+            <span className="text-[11px] font-mono text-slate-400">{customCardsCount} cards</span>
+          </div>
+          <div className="text-xs font-semibold text-white">Deck Builder</div>
+          <div className="text-[10px] text-slate-400">Add custom cards &amp; dares</div>
+        </button>
+
+        <button
+          onClick={() => {
+            soundService.playClick();
+            if (!settings.adultConfirmed) {
+              onRequestAgeGate();
+            } else {
+              handleGameClick(games[4]); // Spicy Challenge
+            }
+          }}
+          className="p-3.5 rounded-2xl bg-gradient-to-br from-pink-950/40 to-black/50 border border-pink-500/30 hover:border-pink-500/60 text-left transition group active:scale-98"
+        >
+          <div className="flex items-center justify-between text-rose-400 mb-1">
+            <Flame className="w-4 h-4" />
+            <span className="text-[10px] font-semibold text-pink-400">{settings.adultConfirmed ? 'Unlocked' : '18+'}</span>
+          </div>
+          <div className="text-xs font-semibold text-white">Spicy Challenges</div>
+          <div className="text-[10px] text-slate-400">Consensual intimate prompts</div>
+        </button>
+
+        <button
+          onClick={() => {
+            soundService.playClick();
+            onOpenVip();
+          }}
+          className="p-3.5 rounded-2xl bg-white/5 border border-amber-500/20 hover:border-amber-500/40 text-left transition group active:scale-98"
+        >
+          <div className="flex items-center justify-between text-amber-400 mb-1">
+            <Crown className="w-4 h-4" />
+            <span className="text-[10px] font-semibold text-amber-300">Preview</span>
+          </div>
+          <div className="text-xs font-semibold text-white">After Dark VIP</div>
+          <div className="text-[10px] text-slate-400">Future monetization preview</div>
+        </button>
+
+        <button
+          onClick={() => {
+            soundService.playClick();
+            handleGameClick(games[6]); // Challenge wheel
+          }}
+          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 text-left transition group active:scale-98"
+        >
+          <div className="flex items-center justify-between text-purple-400 mb-1">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-[10px] font-semibold text-purple-300">Interactive</span>
+          </div>
+          <div className="text-xs font-semibold text-white">Challenge Wheel</div>
+          <div className="text-[10px] text-slate-400">Spin for instant surprises</div>
+        </button>
+      </div>
+
+      {/* Filter Tabs (Functional segmented controls) */}
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div>
+          <h2 className="text-xl font-bold font-serif text-white tracking-tight">
+            Game Collection
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Select a mode to launch immediate two-player turn-based gameplay.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/10 text-xs">
+          {[
+            { id: 'all', label: 'All 10 Games' },
+            { id: 'spicy', label: 'Spicy & Bold' },
+            { id: 'romantic', label: 'Romantic & Deep' },
+            { id: 'speed', label: 'Timed & Wheel' },
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => {
+                soundService.playClick();
+                setSelectedFilter(f.id as any);
+              }}
+              className={`py-1.5 px-3 rounded-lg font-medium transition-all ${
+                selectedFilter === f.id
+                  ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 10 Playable Games Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredGames.map(game => (
+          <div
+            key={game.id}
+            onClick={() => handleGameClick(game)}
+            className="group rounded-3xl glass-panel p-6 flex flex-col justify-between hover:border-pink-500/40 hover:shadow-xl hover:shadow-pink-900/20 transition-all duration-300 cursor-pointer relative"
+          >
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${game.color} flex items-center justify-center text-white shadow-md shadow-pink-900/30 group-hover:scale-110 transition-transform`}>
+                  {game.icon}
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-medium">
+                  ~{game.approxMinutes} mins · 2 Players
+                </div>
+              </div>
+
+              <h3 className="text-lg font-bold font-serif text-white group-hover:text-pink-300 transition-colors">
+                {game.title}
+              </h3>
+              <p className="text-xs text-pink-400/90 font-medium mt-0.5">
+                {game.tagline}
+              </p>
+              <p className="text-xs text-slate-300 mt-2.5 leading-relaxed line-clamp-2">
+                {game.description}
+              </p>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-pink-400">
+              <span className="capitalize">{game.intensity} Intensity</span>
+              <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span>Play Now</span>
+                <ChevronRight className="w-4 h-4" />
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Memories Journal Modal */}
+      {showMemoriesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg rounded-3xl glass-panel-glow p-6 text-slate-100 shadow-2xl relative my-6">
+            <button
+              onClick={() => setShowMemoriesModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-2 mb-2">
+              <Bookmark className="w-4 h-4 text-pink-500" />
+              <span className="text-xs uppercase tracking-widest text-pink-400 font-semibold">Saved Keepsakes</span>
+            </div>
+            <h2 className="text-2xl font-bold font-serif text-white tracking-tight">Your Relationship Journal</h2>
+            <p className="text-xs text-slate-300 mt-1">
+              Private memories and heartfelt answers recorded on this device.
+            </p>
+
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-slate-400 font-mono">{savedMemories.length} entries saved</span>
+              {savedMemories.length > 0 && (
+                <button
+                  onClick={() => {
+                    const text = savedMemories.map(m => `[${m.date}] ${m.author}:\nPrompt: "${m.prompt}"\nAnswer: "${m.answer}"\n`).join('\n---\n\n');
+                    navigator.clipboard.writeText(text);
+                    soundService.playSuccess();
+                  }}
+                  className="text-pink-400 hover:text-pink-300 text-xs font-semibold underline"
+                >
+                  Copy All to Clipboard
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 max-h-80 overflow-y-auto space-y-3 pr-1">
+              {savedMemories.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-400">
+                  No memories saved yet. Play "Finish the Sentence" or "Memory Lane" and save answers!
+                </div>
+              ) : (
+                savedMemories.map(m => (
+                  <div key={m.id} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-xs relative group">
+                    <div className="flex items-center justify-between text-[10px] text-pink-400 font-semibold mb-1">
+                      <span>Shared by {m.author}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400">{m.date}</span>
+                        <button
+                          onClick={() => {
+                            soundService.playClick();
+                            storageService.deleteMemory(m.id);
+                            // force re-read
+                            setSelectedFilter(prev => prev);
+                          }}
+                          className="text-slate-500 hover:text-rose-400 p-0.5 rounded transition"
+                          title="Delete memory"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-slate-300 italic mb-1.5">"{m.prompt}"</div>
+                    <div className="text-white font-medium text-xs bg-black/40 p-2.5 rounded-xl border border-white/5">
+                      "{m.answer}"
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowMemoriesModal(false)}
+              className="mt-6 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition"
+            >
+              Close Journal
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

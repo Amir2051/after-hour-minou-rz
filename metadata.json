@@ -1,0 +1,6 @@
+{
+  "name": "AFTER HOURS",
+  "description": "Premium couples gaming platform. Two players. No limits. Just good times.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -53,7 +53,7 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
     const chosen = segments[targetIdx];
 
     // Pick a dynamic specific challenge from the mini-deck for this segment
-    const miniDeck = WHEEL_DYNAMIC_CHALLENGES[chosen.name] || [chosen.category];
+    const miniDeck = WHEEL_DYNAMIC_CHALLENGES[chosen.category] || [chosen.category];
     const pickedAction = miniDeck[Math.floor(Math.random() * miniDeck.length)];
 
     // Extra full spins (5 to 8 rotations) + exact angle to land on target

@@ -82,7 +82,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
 
   // Set initial timer if challenge has a duration or seconds
   useEffect(() => {
-    const duration = (currentChallenge as any)?.seconds || (currentChallenge as any)?.duration || 45;
+    const duration = (currentChallenge as any)?.seconds || (currentChallenge as any)?.seconds || 45;
     setTimeLeft(duration);
     setIsTimerRunning(false);
   }, [cardIndex, currentChallenge]);

@@ -36,7 +36,7 @@ app.get('/api/health', (_req, res) => {
 app.post('/api/referee/ask', async (req, res) => {
   if (!ai) return res.status(503).json({ error: 'Gemini is not configured. Add GEMINI_API_KEY to the server environment.' });
 
-  const { prompt, scope, activePlayer, partnerName, privateMemories, sharedMemories, adultContent } = req.body || {};
+  const { prompt, scope, activePlayer, partnerName, privateMemories, sharedMemories, adultContent, gameMode, history } = req.body || {};
   if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 1200) {
     return res.status(400).json({ error: 'Enter a message of up to 1,200 characters.' });
   }
@@ -62,10 +62,12 @@ app.post('/api/referee/ask', async (req, res) => {
     'If asked for a game card, return one original card with a clear category and a simple optional pass. Do not make adult content explicit or graphic.',
   ].join(' ');
 
+  const safeHistory = Array.isArray(history) ? history.slice(-8).filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.text === 'string').map(item => `${item.role === 'user' ? 'Player' : 'Referee'}: ${item.text.slice(0, 1200)}`) : [];
   const context = [
-    `Current view: ${scope}. Active player: ${String(activePlayer || 'the couple').slice(0, 80)}. Partner: ${String(partnerName || 'their partner').slice(0, 80)}.`,
+    `Game mode: ${String(gameMode || 'game night').slice(0, 80)}. Current memory view: ${scope}. Active player: ${String(activePlayer || 'the couple').slice(0, 80)}. Partner: ${String(partnerName || 'their partner').slice(0, 80)}.`,
     ownMemory.length ? `ACTIVE PLAYER PRIVATE MEMORY (only this player's turn may use it):\n${ownMemory.map(item => '- ' + item).join('\n')}` : '',
     sharedMemory.length ? `MUTUALLY SHARED MEMORY:\n${sharedMemory.map(item => '- ' + item).join('\n')}` : '',
+    safeHistory.length ? `RECENT CONVERSATION IN THIS SAME PLAYER VIEW:\n${safeHistory.join('\n')}` : '',
     `User request: ${prompt.trim()}`,
   ].filter(Boolean).join('\n\n');
 

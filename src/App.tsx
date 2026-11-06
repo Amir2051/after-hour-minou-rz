@@ -262,7 +262,7 @@ export default function App() {
         onCancel={() => setIsAgeGateOpen(false)}
       />
 
-      <TheReferee players={players} adultConfirmed={settings.adultConfirmed} onRequestAgeGate={() => setIsAgeGateOpen(true)} />
+      <TheReferee players={players} adultConfirmed={settings.adultConfirmed} gameMode={currentView} onRequestAgeGate={() => setIsAgeGateOpen(true)} />
     </div>
   );
 }

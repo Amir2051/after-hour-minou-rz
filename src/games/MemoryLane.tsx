@@ -138,6 +138,7 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="memory_lane"
         gameTitle="Memory Lane"
         player1Name={players.player1}
         player2Name={players.player2}

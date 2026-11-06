@@ -217,7 +217,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
                     e.stopPropagation();
                     soundService.playClick();
                     setIsTimerRunning(false);
-                    setTimeLeft(currentChallenge.duration || 30);
+                    setTimeLeft(currentChallenge.seconds || 30);
                   }}
                   className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition"
                   title="Reset Timer"

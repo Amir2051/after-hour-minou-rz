@@ -12,6 +12,7 @@ const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '24kb' }));
 
 const requestWindows = new Map();
@@ -42,7 +43,7 @@ app.post('/api/referee/ask', async (req, res) => {
   if (!['player1', 'player2', 'shared'].includes(scope)) {
     return res.status(400).json({ error: 'Choose a valid memory scope.' });
   }
-  if (adultContent !== true && /\b(explicit|graphic sex|pornographic)\b/i.test(prompt)) {
+  if (adultContent !== true && /\b(spicy|adult|intimate|sexual|erotic|nsfw|18\+|explicit|graphic sex|pornographic)\b/i.test(prompt)) {
     return res.status(403).json({ error: 'Confirm that both players are adults before requesting adult content.' });
   }
 

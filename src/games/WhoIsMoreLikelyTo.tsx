@@ -265,6 +265,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="who_is_more_likely"
         gameTitle="Who Is More Likely To?"
         player1Name={players.player1}
         player2Name={players.player2}

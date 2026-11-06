@@ -9,38 +9,47 @@ export interface CardArtworkProps {
   category: string;
   intensity?: 'mild' | 'medium' | 'spicy' | 'wild';
   className?: string;
+  artworkId?: string;
 }
 
-export const CardArtwork: React.FC<CardArtworkProps> = ({ category, intensity, className = '' }) => {
+export const CardArtwork: React.FC<CardArtworkProps> = ({ category, intensity, artworkId, className = '' }) => {
   const normCat = category.toLowerCase();
+  const artSeed = (artworkId || category).split('').reduce((seed, char) => (seed * 31 + char.charCodeAt(0)) >>> 0, 7);
+  const artHue = 320 + (artSeed % 36);
+  const artShift = artSeed % 90;
+  const artCurve = 25 + (artSeed % 35);
+  const artDots = Array.from({ length: 13 }, (_, index) => ({
+    x: (artSeed * (index + 3) + index * 47) % 300 + 10,
+    y: (artSeed * (index + 5) + index * 29) % 140 + 10,
+    r: 1 + ((artSeed + index * 7) % 3),
+  }));
 
-  // 18+ Spicy Artwork
+  // Each 18+ prompt receives its own deterministic editorial illustration.
   if (intensity === 'spicy' || normCat.includes('spicy')) {
+    const gradientId = `spicyGlow-${(artSeed % 100000).toString(36)}`;
     return (
       <div className={`relative flex items-center justify-center overflow-hidden pointer-events-none select-none ${className}`}>
-        <svg viewBox="0 0 320 160" className="w-full h-full opacity-35 mix-blend-screen" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 320 440" preserveAspectRatio="xMidYMid slice" className="w-full h-full opacity-75" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
-            <radialGradient id="spicyGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ff2d78" stopOpacity="0.8"/>
-              <stop offset="50%" stopColor="#be123c" stopOpacity="0.3"/>
-              <stop offset="100%" stopColor="#000000" stopOpacity="0"/>
+            <radialGradient id={gradientId} cx={`${35 + artShift % 35}%`} cy="42%" r="75%">
+              <stop offset="0%" stopColor={`hsl(${artHue} 88% 62% / .42)`} />
+              <stop offset="55%" stopColor={`hsl(${artHue + 22} 72% 24% / .24)`} />
+              <stop offset="100%" stopColor="#080914" stopOpacity="0" />
             </radialGradient>
-            <linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#e11d48"/>
-              <stop offset="60%" stopColor="#ff4387"/>
-              <stop offset="100%" stopColor="#fed7aa"/>
+            <linearGradient id={`${gradientId}-satin`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={`hsl(${artHue} 90% 76% / .52)`} />
+              <stop offset="55%" stopColor={`hsl(${artHue + 18} 80% 42% / .18)`} />
+              <stop offset="100%" stopColor="#11152b" stopOpacity="0" />
             </linearGradient>
           </defs>
-          <circle cx="160" cy="80" r="75" fill="url(#spicyGlow)" />
-          {/* Seductive Silhouette & Flame Curves */}
-          <path d="M160 20 C185 50 205 75 205 105 C205 130 185 145 160 145 C135 145 115 130 115 105 C115 75 135 50 160 20 Z" fill="url(#flameGrad)" opacity="0.85"/>
-          <path d="M160 45 C175 68 188 85 188 105 C188 122 175 132 160 132 C145 132 132 122 132 105 C132 85 145 68 160 45 Z" fill="#ffe4e6" opacity="0.95"/>
-          {/* Satin ribbon curve */}
-          <path d="M70 120 Q160 90 250 125 Q160 140 70 120 Z" fill="#ff2d78" opacity="0.4"/>
-          {/* Subtle embers */}
-          <circle cx="120" cy="40" r="2" fill="#fff" opacity="0.8"/>
-          <circle cx="200" cy="45" r="2.5" fill="#f43f5e" opacity="0.9"/>
-          <circle cx="160" cy="15" r="1.5" fill="#ffd1e3" opacity="0.8"/>
+          <rect width="320" height="440" fill={`url(#${gradientId})`} />
+          <path d={`M-35 ${170 + artShift} C65 ${80 + artCurve} 125 ${260 - artCurve} 355 ${130 + artShift} L355 260 C205 350 95 175 -35 310Z`} fill={`url(#${gradientId}-satin)`} />
+          <path d={`M-30 ${300 - artShift / 2} Q125 ${210 + artCurve} 350 ${330 - artCurve} L350 455 L-30 455Z`} fill={`hsl(${artHue + 12} 75% 38% / .15)`} />
+          <ellipse cx={115 + artShift} cy={155 + artCurve / 2} rx="58" ry="105" fill="none" stroke={`hsl(${artHue} 90% 78% / .22)`} strokeWidth="1.2" />
+          <path d={`M${70 + artShift / 3} 110 C${155 + artCurve} 35 ${245 - artCurve} 170 ${180 + artShift / 2} 260`} fill="none" stroke={`hsl(${artHue + 12} 90% 82% / .35)`} strokeWidth="2" />
+          <path d={`M35 ${360 - artCurve} Q150 ${275 + artShift / 3} 290 370`} fill="none" stroke="#f8d7e9" strokeOpacity=".24" strokeWidth="1.5" />
+          {artDots.map((dot, index) => <circle key={index} cx={dot.x} cy={dot.y + 130} r={dot.r} fill={index % 3 === 0 ? '#fff0f7' : `hsl(${artHue} 90% 78%)`} opacity={.22 + (index % 4) * .1} />)}
+          <path d="M0 0 H320 V440 H0Z" fill="none" stroke="#c4b5fd" strokeOpacity=".12" />
         </svg>
       </div>
     );

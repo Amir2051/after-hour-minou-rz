@@ -177,6 +177,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
         <GameCard
           key={`${currentChallenge.id}-${turnIndex}`}
           category={currentChallenge.category}
+          cardId={currentChallenge.id}
           intensity={currentChallenge.intensity || 'spicy'}
           title={currentChallenge.title}
           typeLabel={`Level ${currentChallenge.level || 1} · Challenge`}

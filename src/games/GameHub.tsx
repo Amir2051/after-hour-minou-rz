@@ -50,7 +50,7 @@ export const GameHub: React.FC<GameHubProps> = ({
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [historyVersion, setHistoryVersion] = useState(0);
+  const [, setHistoryVersion] = useState(0);
 
   const customCardsCount = storageService.getCustomCards().length;
   const favoritesCount = storageService.getFavorites().length;

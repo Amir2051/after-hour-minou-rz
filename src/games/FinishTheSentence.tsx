@@ -83,7 +83,7 @@ export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
       id: `fts-custom-${Date.now()}`,
       category: 'Our Custom Prompts',
       prompt: customPromptInput.trim(),
-      intensity: 'medium',
+      intensity: 'medium' as const,
     };
     setActiveDeck(prev => [newEntry, ...prev]);
     setCustomPromptInput('');

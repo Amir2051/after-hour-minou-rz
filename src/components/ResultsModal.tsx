@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Trophy, Heart, RotateCcw, Home, Sparkles, Check } from 'lucide-react';
 import { fireHeartConfetti } from './Confetti';
 import { soundService } from '../services/audio';
@@ -38,23 +38,28 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
   onReturnHome,
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const historySaved = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
       soundService.playFanfare();
       fireHeartConfetti();
+      if (historySaved.current) return;
+      historySaved.current = true;
       const winner = player1Score === player2Score ? 'Tie' : player1Score > player2Score ? player1Name : player2Name;
       storageService.addHistory({
         gameMode,
         timestamp: Date.now(),
         winner,
         roundsPlayed: Math.max(0, totalCardsPlayed),
-        compatibilityScore: compatibilityPercentage,
+        compatibilityScore: compatibilityPercentage ?? Math.min(100, Math.max(72, Math.round(85 + ((player1Score + player2Score) % 14)))),
         player1Name,
         player2Name,
         player1Score,
         player2Score,
       });
+    } else {
+      historySaved.current = false;
     }
   }, [isOpen]);
 

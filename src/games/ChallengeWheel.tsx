@@ -231,6 +231,7 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="challenge_wheel"
         gameTitle="Couples Challenge Wheel"
         player1Name={players.player1}
         player2Name={players.player2}

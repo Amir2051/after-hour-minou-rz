@@ -69,4 +69,8 @@ export interface GameHistoryEntry {
   winner?: string;
   roundsPlayed: number;
   compatibilityScore?: number;
+  player1Name?: string;
+  player2Name?: string;
+  player1Score?: number;
+  player2Score?: number;
 }

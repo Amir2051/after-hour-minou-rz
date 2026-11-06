@@ -22,7 +22,7 @@ export type RelationshipStage =
   | 'engaged'
   | 'married';
 
-export type IntensityLevel = 'mild' | 'medium' | 'spicy';
+export type IntensityLevel = 'mild' | 'medium' | 'spicy' | 'wild';
 
 export interface PlayerProfile {
   name: string;

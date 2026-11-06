@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { BrainCircuit, X, Send, ShieldCheck, LockKeyhole, Sparkles, Trash2, Pause, Play, Heart, MessageCircle, Plus } from 'lucide-react';
-import { RefereeMemory, RefereeMessage, RefereeScope, refereeMemoryService } from '../services/referee';
+import { RefereeMessage, RefereeScope, refereeMemoryService } from '../services/referee';
 import { StoredPlayers } from '../services/storage';
 
 interface TheRefereeProps {
@@ -31,7 +31,7 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed,
     event.preventDefault();
     const question = prompt.trim();
     if (!question || isLoading || !isEnabled) return;
-    if (!adultConfirmed && /\\b(spicy|adult|intimate|sexual|erotic|nsfw|18\\+)\\b/i.test(question)) {
+    if (!adultConfirmed && /\b(spicy|adult|intimate|sexual|erotic|nsfw|18\\+)\b/i.test(question)) {
       setError('Confirm that both players are 18+ before requesting adult prompts.');
       onRequestAgeGate();
       return;

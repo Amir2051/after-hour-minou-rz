@@ -232,6 +232,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="spicy_challenge"
         gameTitle="The Spicy Challenge"
         player1Name={players.player1}
         player2Name={players.player2}

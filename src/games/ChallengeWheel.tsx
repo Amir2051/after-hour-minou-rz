@@ -53,7 +53,7 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
     const chosen = segments[targetIdx];
 
     // Pick a dynamic specific challenge from the mini-deck for this segment
-    const miniDeck = WHEEL_DYNAMIC_CHALLENGES[chosen.label] || [chosen.description];
+    const miniDeck = WHEEL_DYNAMIC_CHALLENGES[chosen.name] || [chosen.category];
     const pickedAction = miniDeck[Math.floor(Math.random() * miniDeck.length)];
 
     // Extra full spins (5 to 8 rotations) + exact angle to land on target
@@ -175,7 +175,7 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
                       dominantBaseline="middle"
                       transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
                     >
-                      {seg.label}
+                      {seg.name}
                     </text>
                   </g>
                 );
@@ -205,10 +205,10 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
               The Wheel Has Spoken!
             </div>
             <div className="text-2xl font-bold font-serif text-white">
-              {selectedSegment.label}
+              {selectedSegment.name}
             </div>
             <p className="text-sm sm:text-base text-pink-200 font-medium italic">
-              "{specificAction || selectedSegment.description}"
+              "{specificAction || selectedSegment.category}"
             </p>
 
             <div className="flex gap-2 pt-2">

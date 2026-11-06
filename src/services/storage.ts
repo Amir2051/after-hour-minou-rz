@@ -175,9 +175,18 @@ export const storageService = {
   addHistory(entry: GameHistoryEntry): void {
     try {
       const history = this.getHistory();
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([entry, ...history.slice(0, 20)]));
+      const next = [entry, ...history.filter(item => item.timestamp !== entry.timestamp)].slice(0, 100);
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(next));
     } catch {
       // Ignored
+    }
+  },
+
+  clearHistory(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+    } catch {
+      // Ignore storage errors
     }
   },
 

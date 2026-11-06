@@ -7,10 +7,13 @@ import React, { useEffect } from 'react';
 import { Trophy, Heart, RotateCcw, Home, Sparkles, Check } from 'lucide-react';
 import { fireHeartConfetti } from './Confetti';
 import { soundService } from '../services/audio';
+import { GameModeId } from '../types';
+import { storageService } from '../services/storage';
 
 interface ResultsModalProps {
   isOpen: boolean;
   gameTitle: string;
+  gameMode: GameModeId;
   player1Name: string;
   player2Name: string;
   player1Score: number;
@@ -24,6 +27,7 @@ interface ResultsModalProps {
 export const ResultsModal: React.FC<ResultsModalProps> = ({
   isOpen,
   gameTitle,
+  gameMode,
   player1Name,
   player2Name,
   player1Score,
@@ -39,6 +43,18 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
     if (isOpen) {
       soundService.playFanfare();
       fireHeartConfetti();
+      const winner = player1Score === player2Score ? 'Tie' : player1Score > player2Score ? player1Name : player2Name;
+      storageService.addHistory({
+        gameMode,
+        timestamp: Date.now(),
+        winner,
+        roundsPlayed: Math.max(0, totalCardsPlayed),
+        compatibilityScore: compatibilityPercentage,
+        player1Name,
+        player2Name,
+        player1Score,
+        player2Score,
+      });
     }
   }, [isOpen]);
 

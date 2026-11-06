@@ -272,6 +272,7 @@ export const TruthOrDare: React.FC<TruthOrDareProps> = ({
       {/* Results Modal */}
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="truth_or_dare"
         gameTitle="Truth or Dare"
         player1Name={players.player1}
         player2Name={players.player2}

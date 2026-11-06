@@ -58,7 +58,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
     if (selectedCategory !== 'Random Mix' && selectedCategory !== 'All') {
       list = list.filter(c => matchesCategoryFilter(c.category, selectedCategory));
     }
-    return list.length > 0 ? list : SPICY_CHALLENGE_DECK;
+    return list.length > 0 ? list : SPICY_CHALLENGE_DECK.filter(c => c.intensity !== 'spicy');
   }, [settings.adultConfirmed, settings.intensity, selectedCategory]);
 
   const currentChallenge = filteredChallenges[cardIndex % filteredChallenges.length];
@@ -82,7 +82,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
 
   // Set initial timer if challenge has a duration or seconds
   useEffect(() => {
-    const duration = (currentChallenge as any)?.seconds || (currentChallenge as any)?.duration || 45;
+    const duration = (currentChallenge as any)?.seconds || (currentChallenge as any)?.seconds || 45;
     setTimeLeft(duration);
     setIsTimerRunning(false);
   }, [cardIndex, currentChallenge]);
@@ -217,7 +217,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
                     e.stopPropagation();
                     soundService.playClick();
                     setIsTimerRunning(false);
-                    setTimeLeft(currentChallenge.duration || 30);
+                    setTimeLeft(currentChallenge.seconds || 30);
                   }}
                   className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition"
                   title="Reset Timer"
@@ -232,6 +232,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="spicy_challenge"
         gameTitle="The Spicy Challenge"
         player1Name={players.player1}
         player2Name={players.player2}

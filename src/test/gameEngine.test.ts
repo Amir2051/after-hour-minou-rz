@@ -17,6 +17,7 @@ import {
   MEMORY_LANE_DECK,
   SIXTY_SECOND_CHALLENGES
 } from '../data/defaultDecks';
+import { storageService } from '../services/storage';
 
 // Mock localStorage for node environment
 const storageMock: Record<string, string> = {};
@@ -53,8 +54,8 @@ assert(NEVER_HAVE_I_EVER_DECK.length >= 15, `Never Have I Ever has ${NEVER_HAVE_
 assert(SPICY_CHALLENGE_DECK.length >= 10, `Spicy Challenge has ${SPICY_CHALLENGE_DECK.length} cards`);
 assert(WHO_IS_MORE_LIKELY_DECK.length >= 12, `Who Is More Likely To has ${WHO_IS_MORE_LIKELY_DECK.length} cards`);
 assert(FINISH_THE_SENTENCE_DECK.length >= 10, `Finish the Sentence has ${FINISH_THE_SENTENCE_DECK.length} cards`);
-assert(CHALLENGE_WHEEL_SEGMENTS.length === 7, `Challenge Wheel has 7 segments`);
-assert(Object.keys(WHEEL_DYNAMIC_CHALLENGES).length === 7, `Wheel has dynamic challenge prompts for all 7 segments`);
+assert(CHALLENGE_WHEEL_SEGMENTS.length >= 6, `Challenge Wheel has ${CHALLENGE_WHEEL_SEGMENTS.length} category segments`);
+assert(CHALLENGE_WHEEL_SEGMENTS.every(segment => (WHEEL_DYNAMIC_CHALLENGES[segment.category] || []).length > 0), 'Every wheel segment has matching dynamic challenge prompts');
 assert(MEMORY_LANE_DECK.length >= 6, `Memory Lane has ${MEMORY_LANE_DECK.length} prompts`);
 assert(SIXTY_SECOND_CHALLENGES.length >= 7, `60-Second Challenges has ${SIXTY_SECOND_CHALLENGES.length} challenges`);
 
@@ -115,6 +116,26 @@ assert(retrieved?.scores.player1 === 30, 'Stored player 1 score matches (30)');
 
 GameEngine.clearSession();
 assert(GameEngine.getSession('truth_or_dare') === null, 'Session cleared on demand');
+
+// Test 6: Completed Game History Persistence
+console.log('\\n[6] Completed Game History Persistence:');
+const historyEntry = {
+  gameMode: 'truth_or_dare' as const,
+  timestamp: 123456789,
+  winner: 'Tie',
+  roundsPlayed: 8,
+  compatibilityScore: 92,
+  player1Name: 'Alex',
+  player2Name: 'Jordan',
+  player1Score: 40,
+  player2Score: 40,
+};
+storageService.addHistory(historyEntry);
+assert(storageService.getHistory().length === 1, 'Completed session is saved to local history');
+assert(storageService.getHistory()[0]?.player1Score === 40, 'History preserves both players’ final scores');
+storageService.clearHistory();
+assert(storageService.getHistory().length === 0, 'Game history can be cleared independently');
+
 
 console.log(`\n========================================`);
 console.log(`TOTAL TESTS: ${passedTests + failedTests}`);

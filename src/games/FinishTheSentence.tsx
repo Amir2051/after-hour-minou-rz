@@ -83,6 +83,7 @@ export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
       id: `fts-custom-${Date.now()}`,
       category: 'Our Custom Prompts',
       prompt: customPromptInput.trim(),
+      intensity: 'medium' as const,
     };
     setActiveDeck(prev => [newEntry, ...prev]);
     setCustomPromptInput('');
@@ -199,6 +200,7 @@ export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="finish_the_sentence"
         gameTitle="Finish the Sentence"
         player1Name={players.player1}
         player2Name={players.player2}

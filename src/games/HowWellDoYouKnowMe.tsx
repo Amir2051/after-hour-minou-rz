@@ -256,6 +256,7 @@ export const HowWellDoYouKnowMe: React.FC<HowWellDoYouKnowMeProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="how_well_know_me"
         gameTitle="How Well Do You Know Me?"
         player1Name={players.player1}
         player2Name={players.player2}

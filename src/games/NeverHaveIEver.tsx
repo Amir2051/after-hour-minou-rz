@@ -218,6 +218,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="never_have_i_ever"
         gameTitle="Never Have I Ever"
         player1Name={players.player1}
         player2Name={players.player2}

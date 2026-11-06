@@ -41,7 +41,7 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
     soundService.playSuccess();
     storageService.saveMemory({
       id: `memlane-${Date.now()}`,
-      prompt: currentMemory.title + ': ' + currentMemory.question,
+      prompt: currentMemory.era + ': ' + currentMemory.prompt,
       answer: savedAnswer.trim(),
       author: activePlayer,
       date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -95,10 +95,10 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
         key={`${currentMemory.id}-${turnIndex}`}
         category={`Era: ${currentMemory.era}`}
         intensity="medium"
-        title={currentMemory.title}
+        title={currentMemory.era}
         typeLabel="Memory Lane"
-        content={currentMemory.question}
-        subcontent={currentMemory.followUp ? `Bonus Prompt: ${currentMemory.followUp}` : undefined}
+        content={currentMemory.prompt}
+        subcontent={currentMemory.detail}
         onSkip={() => handleNext(0)}
         onComplete={() => {
           soundService.playSuccess();
@@ -138,6 +138,7 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="memory_lane"
         gameTitle="Memory Lane"
         player1Name={players.player1}
         player2Name={players.player2}

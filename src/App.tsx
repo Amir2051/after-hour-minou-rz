@@ -24,6 +24,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { GameModeId, GameSettings } from './types';
 import { storageService, StoredPlayers } from './services/storage';
 import { soundService } from './services/audio';
+import { TheReferee } from './components/TheReferee';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'hub' | GameModeId>('hub');
@@ -76,7 +77,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#08050e] text-[#f7f3fb] flex flex-col justify-between selection:bg-pink-500/30 selection:text-white">
+    <div className="after-hours-shell min-h-screen text-[#f7f3fb] flex flex-col justify-between selection:bg-pink-500/30 selection:text-white">
       {/* Top Navbar */}
       <Navbar
         currentView={currentView}
@@ -164,7 +165,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -173,7 +173,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -182,7 +181,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
 
@@ -191,7 +189,6 @@ export default function App() {
             players={players}
             settings={settings}
             onExit={() => setCurrentView('hub')}
-            onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
       </main>
@@ -260,6 +257,8 @@ export default function App() {
         onConfirm={handleConfirmAgeGate}
         onCancel={() => setIsAgeGateOpen(false)}
       />
+
+      <TheReferee players={players} adultConfirmed={settings.adultConfirmed} gameMode={currentView} onRequestAgeGate={() => setIsAgeGateOpen(true)} />
     </div>
   );
 }

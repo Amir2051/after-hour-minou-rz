@@ -33,6 +33,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
   const [p2Vote, setP2Vote] = useState<string | null>(null);
   const [phase, setPhase] = useState<'p1' | 'p2' | 'revealed'>('p1');
   const [matches, setMatches] = useState(0);
+  const [playedCount, setPlayedCount] = useState(0);
   const [scores, setScores] = useState({ player1: 0, player2: 0 });
   const [isGameOver, setIsGameOver] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | string[]>('Random Mix');
@@ -54,12 +55,13 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
     if (selectedCategory !== 'Random Mix' && selectedCategory !== 'All') {
       list = list.filter(q => matchesCategoryFilter(q.category, selectedCategory));
     }
-    return list.length > 0 ? list : WHO_IS_MORE_LIKELY_DECK;
+    return list.length > 0 ? list : WHO_IS_MORE_LIKELY_DECK.filter(q => q.intensity !== 'spicy');
   }, [settings.adultConfirmed, settings.intensity, selectedCategory]);
 
   const currentQ = filteredDeck[questionIndex % filteredDeck.length];
 
   const handleShuffle = () => {
+    setPlayedCount(0);
     setQuestionIndex(Math.floor(Math.random() * filteredDeck.length));
     setP1Vote(null);
     setP2Vote(null);
@@ -104,7 +106,8 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
 
   const handleNext = () => {
     soundService.playClick();
-    if (questionIndex + 1 >= WHO_IS_MORE_LIKELY_DECK.length) {
+    setPlayedCount(prev => prev + 1);
+    if (playedCount + 1 >= filteredDeck.length) {
       setIsGameOver(true);
       return;
     }
@@ -119,8 +122,8 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
       <TurnIndicator
         activePlayer={phase === 'p1' ? players.player1 : phase === 'p2' ? players.player2 : 'Reveal'}
         partnerPlayer={phase === 'p1' ? players.player2 : players.player1}
-        round={questionIndex + 1}
-        maxRounds={WHO_IS_MORE_LIKELY_DECK.length}
+        round={playedCount + 1}
+        maxRounds={filteredDeck.length}
         scores={scores}
         player1Name={players.player1}
         player2Name={players.player2}
@@ -133,6 +136,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
           setP2Vote(null);
           setPhase('p1');
           setMatches(0);
+          setPlayedCount(0);
           setScores({ player1: 0, player2: 0 });
         }}
       />
@@ -261,13 +265,14 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
 
       <ResultsModal
         isOpen={isGameOver}
+        gameMode="who_is_more_likely"
         gameTitle="Who Is More Likely To?"
         player1Name={players.player1}
         player2Name={players.player2}
         player1Score={scores.player1}
         player2Score={scores.player2}
-        totalCardsPlayed={WHO_IS_MORE_LIKELY_DECK.length}
-        compatibilityPercentage={Math.round((matches / WHO_IS_MORE_LIKELY_DECK.length) * 100)}
+        totalCardsPlayed={playedCount}
+        compatibilityPercentage={playedCount ? Math.round((matches / playedCount) * 100) : 0}
         onRematch={() => {
           setIsGameOver(false);
           setQuestionIndex(0);
@@ -275,6 +280,7 @@ export const WhoIsMoreLikelyTo: React.FC<WhoIsMoreLikelyToProps> = ({
           setP2Vote(null);
           setPhase('p1');
           setMatches(0);
+          setPlayedCount(0);
           setScores({ player1: 0, player2: 0 });
         }}
         onReturnHome={onExit}

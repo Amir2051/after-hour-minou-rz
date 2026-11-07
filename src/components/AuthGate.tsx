@@ -20,7 +20,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     let unsubscribe = () => {};
     try {
       const auth = getFirebaseAuth();
-      auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(() => undefined);
+      auth.setPersistence(window.firebase!.auth.Auth.Persistence.LOCAL).catch(() => undefined);
       unsubscribe = auth.onAuthStateChanged((nextUser: AuthUser | null) => {
         setUser(nextUser);
         setLoading(false);
@@ -42,7 +42,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     setError('');
     try {
       const auth = getFirebaseAuth();
-      const provider = new window.firebase.auth.GoogleAuthProvider();
+      const provider = new window.firebase!.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await auth.signInWithPopup(provider);
     } catch (authError: any) {

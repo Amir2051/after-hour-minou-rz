@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Play, Sparkles, Check, Heart, Trophy } from 'lucide-react';
 import { CHALLENGE_WHEEL_SEGMENTS, WHEEL_DYNAMIC_CHALLENGES } from '../data/defaultDecks';
 import { TurnIndicator } from '../components/TurnIndicator';
@@ -21,10 +22,11 @@ interface ChallengeWheelProps {
 }
 
 export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
   const [turnIndex, setTurnIndex] = useState(0);
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -104,6 +106,7 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6 text-center">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -248,5 +251,6 @@ export const ChallengeWheel: React.FC<ChallengeWheelProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

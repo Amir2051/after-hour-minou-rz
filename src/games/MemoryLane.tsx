@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Sparkles, Heart, BookmarkPlus, Check, ChevronRight, History } from 'lucide-react';
 import { MEMORY_LANE_DECK } from '../data/defaultDecks';
 import { TurnIndicator } from '../components/TurnIndicator';
@@ -20,10 +21,11 @@ interface MemoryLaneProps {
 }
 
 export const MemoryLane: React.FC<MemoryLaneProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
   const [cardIndex, setCardIndex] = useState(0);
   const [turnIndex, setTurnIndex] = useState(0);
   const [savedNotice, setSavedNotice] = useState(false);
@@ -71,6 +73,7 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -155,5 +158,6 @@ export const MemoryLane: React.FC<MemoryLaneProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

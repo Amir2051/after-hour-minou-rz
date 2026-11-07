@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, useMultiplayerHost, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Flame, Play, Pause, RotateCcw, Heart, Shield, Check, SkipForward } from 'lucide-react';
 import { SPICY_CHALLENGE_DECK } from '../data/defaultDecks';
 import { GLOBAL_CATEGORIES, matchesCategoryFilter } from '../data/categories';
@@ -24,11 +25,13 @@ interface SpicyChallengeProps {
 }
 
 export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
   onRequestAgeGate,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
+  const isMultiplayerHost = useMultiplayerHost();
   const [cardIndex, setCardIndex] = useState(0);
   const [turnIndex, setTurnIndex] = useState(0);
   const [scores, setScores] = useState({ player1: 0, player2: 0 });
@@ -85,10 +88,11 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
     const duration = (currentChallenge as any)?.seconds || (currentChallenge as any)?.seconds || 45;
     setTimeLeft(duration);
     setIsTimerRunning(false);
-  }, [cardIndex, currentChallenge]);
+  }, [cardIndex, currentChallenge, isMultiplayerHost]);
 
   // Timer countdown hook
   useEffect(() => {
+    if (!isMultiplayerHost) return;
     let interval: NodeJS.Timeout | null = null;
     if (isTimerRunning && timeLeft !== null && timeLeft > 0) {
       interval = setInterval(() => {
@@ -108,7 +112,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, timeLeft]);
+  }, [isTimerRunning, timeLeft, isMultiplayerHost]);
 
   const handleNextChallenge = (awarded: number) => {
     if (awarded > 0 && settings.scoringEnabled) {
@@ -131,6 +135,7 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -250,5 +255,6 @@ export const SpicyChallenge: React.FC<SpicyChallengeProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

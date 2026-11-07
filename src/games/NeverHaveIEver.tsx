@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, useIsMultiplayerPlayer } from '../multiplayer/useGameState';
 import { Sparkles, Check, X as XIcon, RotateCcw } from 'lucide-react';
 import { NEVER_HAVE_I_EVER_DECK } from '../data/defaultDecks';
 import { GLOBAL_CATEGORIES, matchesCategoryFilter } from '../data/categories';
@@ -23,11 +24,14 @@ interface NeverHaveIEverProps {
 }
 
 export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
   onRequestAgeGate,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
+  const canAnswerPlayer1 = useIsMultiplayerPlayer(0);
+  const canAnswerPlayer2 = useIsMultiplayerPlayer(1);
   const [cardIndex, setCardIndex] = useState(0);
   const [p1Response, setP1Response] = useState<'have' | 'never' | null>(null);
   const [p2Response, setP2Response] = useState<'have' | 'never' | null>(null);
@@ -143,10 +147,10 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
         totalCards={filteredDeck.length}
         content={`"${currentCard?.text}"`}
         subcontent="Both players answer honestly. Whoever has done it takes a sip or admits the confession!"
-        onSkip={handleNext}
+        onSkip={() => { if (canAnswerPlayer1 && p1Response && p2Response) handleNext(); }}
         onComplete={() => {
           soundService.playSuccess();
-          handleNext();
+          if (canAnswerPlayer1 && p1Response && p2Response) handleNext();
         }}
         completeLabel="Next Statement"
         skipLabel="Skip Card"
@@ -158,6 +162,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
             <div className="flex gap-2">
               <button
                 type="button"
+                disabled={!canAnswerPlayer1 || !!p1Response}
                 onClick={() => handleP1Answer('have')}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   p1Response === 'have'
@@ -170,6 +175,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
               </button>
               <button
                 type="button"
+                disabled={!canAnswerPlayer1 || !!p1Response}
                 onClick={() => handleP1Answer('never')}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   p1Response === 'never'
@@ -189,6 +195,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
             <div className="flex gap-2">
               <button
                 type="button"
+                disabled={!canAnswerPlayer2 || !!p2Response}
                 onClick={() => handleP2Answer('have')}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   p2Response === 'have'
@@ -201,6 +208,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
               </button>
               <button
                 type="button"
+                disabled={!canAnswerPlayer2 || !!p2Response}
                 onClick={() => handleP2Answer('never')}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   p2Response === 'never'

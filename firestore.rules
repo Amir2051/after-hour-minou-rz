@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isInviteParty(data) {
+      return signedIn() && (data.senderUid == request.auth.uid || data.recipientEmail == request.auth.token.email);
+    }
+
+    match /gameInvites/{inviteId} {
+      allow create: if signedIn()
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.senderEmail == request.auth.token.email
+        && request.resource.data.recipientEmail is string
+        && request.resource.data.recipientEmail != request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && request.resource.data.gameType in ['chess', 'truth_or_dare', 'how_well_know_me', 'would_you_rather', 'never_have_i_ever', 'spicy_challenge', 'who_is_more_likely', 'finish_the_sentence', 'challenge_wheel', 'memory_lane', 'sixty_seconds'];
+      allow read: if isInviteParty(resource.data);
+      allow update: if signedIn()
+        && resource.data.status == 'pending'
+        && resource.data.recipientEmail == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedUid', 'acceptedAt', 'gameId'])
+        && request.resource.data.status in ['accepted', 'declined']
+        && (request.resource.data.status == 'declined'
+          || (request.resource.data.acceptedUid == request.auth.uid && request.resource.data.gameId is string));
+      allow delete: if false;
+    }
+
+
+    match /gameSessions/{gameId} {
+      allow create: if signedIn()
+        && request.resource.data.recipientUid == request.auth.uid
+        && request.resource.data.senderUid is string
+        && request.resource.data.inviteId is string
+        && request.resource.data.gameType in ['truth_or_dare', 'how_well_know_me', 'would_you_rather', 'never_have_i_ever', 'spicy_challenge', 'who_is_more_likely', 'finish_the_sentence', 'challenge_wheel', 'memory_lane', 'sixty_seconds']
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.status == 'accepted'
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.gameId == gameId
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.acceptedUid == request.auth.uid;
+      allow read: if signedIn() && request.auth.uid in [resource.data.senderUid, resource.data.recipientUid];
+      allow update: if signedIn()
+        && request.auth.uid in [resource.data.senderUid, resource.data.recipientUid]
+        && request.resource.data.senderUid == resource.data.senderUid
+        && request.resource.data.recipientUid == resource.data.recipientUid
+        && request.resource.data.gameType == resource.data.gameType
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /chessGames/{gameId} {
+      allow create: if signedIn()
+        && request.resource.data.blackUid == request.auth.uid
+        && request.resource.data.whiteUid is string
+        && request.resource.data.inviteId is string
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.status == 'accepted'
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.gameId == gameId
+        && getAfter(/databases/$(database)/documents/gameInvites/$(request.resource.data.inviteId)).data.acceptedUid == request.auth.uid;
+      allow read: if signedIn() && request.auth.uid in [resource.data.whiteUid, resource.data.blackUid];
+      allow update: if signedIn()
+        && request.auth.uid in [resource.data.whiteUid, resource.data.blackUid]
+        && request.resource.data.whiteUid == resource.data.whiteUid
+        && request.resource.data.blackUid == resource.data.blackUid
+        && (
+          (resource.data.turnUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fen', 'pgn', 'turnUid', 'status', 'lastMove', 'moveHistory', 'updatedAt', 'winnerUid'])
+            && (request.resource.data.turnUid == resource.data.whiteUid
+              || request.resource.data.turnUid == resource.data.blackUid
+              || request.resource.data.turnUid == null))
+          || (request.resource.data.status == 'resigned'
+            && request.resource.data.winnerUid == (request.auth.uid == resource.data.whiteUid ? resource.data.blackUid : resource.data.whiteUid)
+            && request.resource.data.turnUid == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'winnerUid', 'turnUid', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+  }
+}

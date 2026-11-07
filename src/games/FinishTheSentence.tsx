@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { PenLine, BookmarkPlus, Check, Sparkles, Plus } from 'lucide-react';
 import { FINISH_THE_SENTENCE_DECK } from '../data/defaultDecks';
 import { TurnIndicator } from '../components/TurnIndicator';
@@ -20,10 +21,11 @@ interface FinishTheSentenceProps {
 }
 
 export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
   const [promptIndex, setPromptIndex] = useState(0);
   const [turnIndex, setTurnIndex] = useState(0);
   const [writtenAnswer, setWrittenAnswer] = useState('');
@@ -91,6 +93,7 @@ export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -217,5 +220,6 @@ export const FinishTheSentence: React.FC<FinishTheSentenceProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

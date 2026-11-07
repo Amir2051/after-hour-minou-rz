@@ -439,22 +439,27 @@ export const GameHub: React.FC<GameHubProps> = ({
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Chess is a separate multiplayer experience, not a GameModeId deck game. */}
-      <section className="mt-5 rounded-3xl glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 border border-violet-400/20">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg">♞</div>
-          <div>
-            <h3 className="text-lg font-bold font-serif text-white">Chess</h3>
-            <p className="text-xs text-violet-200 mt-0.5">Classic strategy · Live online match · 2 accounts</p>
-            <p className="text-xs text-slate-300 mt-2">Challenge your partner to a full legal chess match with synchronized moves, turn tracking, and move explanations.</p>
+        {selectedFilter === 'all' && (
+          <div className="group rounded-3xl glass-panel p-6 flex flex-col justify-between border border-violet-400/30 hover:border-violet-300/60 hover:shadow-xl hover:shadow-violet-900/20 transition-all duration-300 relative">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-md">♞</div>
+                <div className="text-[11px] text-violet-200 font-medium">Live online · 2 accounts</div>
+              </div>
+              <h3 className="text-lg font-bold font-serif text-white group-hover:text-violet-200 transition-colors">Chess</h3>
+              <p className="text-xs text-violet-200/90 font-medium mt-0.5">Classic strategy · Play together online</p>
+              <p className="text-xs text-slate-300 mt-2.5 leading-relaxed">Full legal chess with synchronized moves, turn tracking, and move explanations.</p>
+            </div>
+            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-end">
+              <button type="button" onClick={() => { soundService.playClick(); onOpenChess(); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg hover:brightness-110 active:scale-95 transition">
+                <Users className="w-3.5 h-3.5" />
+                <span>Invite &amp; Play Chess</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
-        <button type="button" onClick={() => { soundService.playClick(); onOpenChess(); }} className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-lg hover:brightness-110">
-          <Users className="w-4 h-4" /> Invite &amp; Play Chess <ChevronRight className="w-4 h-4" />
-        </button>
-      </section>
+        )}
+      </div>
 
 
       {/* Completed Game History */}

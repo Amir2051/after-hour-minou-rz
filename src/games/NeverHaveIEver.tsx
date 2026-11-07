@@ -147,7 +147,7 @@ export const NeverHaveIEver: React.FC<NeverHaveIEverProps> = ({
         totalCards={filteredDeck.length}
         content={`"${currentCard?.text}"`}
         subcontent="Both players answer honestly. Whoever has done it takes a sip or admits the confession!"
-        onSkip={() => { if (canAnswerPlayer1 && p1Response && p2Response) handleNext(); }}
+        onSkip={() => { if (canAnswerPlayer1) handleNext(); }}
         onComplete={() => {
           soundService.playSuccess();
           if (canAnswerPlayer1 && p1Response && p2Response) handleNext();

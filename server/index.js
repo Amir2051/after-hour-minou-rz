@@ -30,7 +30,7 @@ async function requireFirebaseAuth(req, res, next) {
     const payload = await verification.json();
     const account = payload.users?.[0];
     if (!account || account.localId === undefined) return res.status(401).json({ error: 'Unable to verify your sign-in session.' });
-    if (account.providerUserInfo?.length && !account.providerUserInfo.some(provider => provider.providerId === 'google.com')) {
+    if (!account.providerUserInfo?.some(provider => provider.providerId === 'google.com')) {
       return res.status(403).json({ error: 'Use Google sign-in for AFTER HOURS.' });
     }
     if (account.email && account.emailVerified !== true) return res.status(403).json({ error: 'Verify your email address before continuing.' });

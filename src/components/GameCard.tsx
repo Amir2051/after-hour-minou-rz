@@ -164,6 +164,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
   const theme = getCategoryTheme();
   const isSpicy = intensity === 'spicy' || category.toLowerCase().includes('spicy');
+  const cardSticker = isSpicy ? '😈' : category.toLowerCase().includes('romantic') ? '💋' : category.toLowerCase().includes('deep') ? '✨' : category.toLowerCase().includes('wild') ? '🔥' : '😼';
 
   // Rotation math during swipe
   const dragRotation = dragOffset * 0.08;
@@ -219,6 +220,15 @@ export const GameCard: React.FC<GameCardProps> = ({
           <div
             className={`w-full h-full min-h-[410px] sm:min-h-[440px] rounded-3xl [backface-visibility:hidden] border ${theme.borderGlow} ${theme.cardBg} p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden backdrop-blur-xl`}
           >
+            {/* Anime-inspired collectible sticker decal */}
+            <div className="absolute z-20 top-14 right-4 sm:right-6 rotate-6 pointer-events-none" aria-label={isSpicy ? '18 plus adult themed sticker' : 'Anime-inspired game sticker'}>
+              <div className={`relative flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 shadow-xl backdrop-blur-md ${isSpicy ? 'bg-rose-950/90 border-rose-300/60 shadow-rose-950/50' : 'bg-purple-950/80 border-fuchsia-300/40 shadow-purple-950/50'}`}>
+                <span className="text-xl leading-none drop-shadow">{cardSticker}</span>
+                <span className={`text-[8px] leading-tight font-black tracking-widest ${isSpicy ? 'text-rose-200' : 'text-fuchsia-100'}`}>{isSpicy ? '18+ ONLY' : 'ANIME VIBE'}</span>
+                <span className="absolute -top-2 -right-1 text-[10px]">✦</span>
+              </div>
+            </div>
+
             {/* Subtle background ambient vector artwork */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
               <CardArtwork category={category} intensity={intensity} artworkId={cardId} className="w-full h-full" />
@@ -333,7 +343,7 @@ export const GameCard: React.FC<GameCardProps> = ({
                   className="flex items-center gap-1.5 py-2.5 px-4 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white active:scale-95 text-xs font-semibold transition"
                 >
                   <SkipForward className="w-3.5 h-3.5" />
-                  <span>{skipLabel || 'Skip'}</span>
+                  <span>Next Card</span>
                 </button>
 
                 <button

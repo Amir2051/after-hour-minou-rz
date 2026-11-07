@@ -389,8 +389,7 @@ export const GameHub: React.FC<GameHubProps> = ({
         {filteredGames.map(game => (
           <div
             key={game.id}
-            onClick={() => handleGameClick(game)}
-            className="group rounded-3xl glass-panel p-6 flex flex-col justify-between hover:border-pink-500/40 hover:shadow-xl hover:shadow-pink-900/20 transition-all duration-300 cursor-pointer relative"
+            className="group rounded-3xl glass-panel p-6 flex flex-col justify-between hover:border-pink-500/40 hover:shadow-xl hover:shadow-pink-900/20 transition-all duration-300 relative"
           >
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -414,12 +413,18 @@ export const GameHub: React.FC<GameHubProps> = ({
               </p>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-pink-400">
-              <span className="capitalize">{game.intensity} Intensity</span>
-              <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                <span>Play Now</span>
+            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-pink-400 capitalize">{game.intensity} Intensity</span>
+              <button
+                type="button"
+                onClick={() => handleGameClick(game)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${game.color} px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-pink-950/30 hover:brightness-110 active:scale-95 transition`}
+                aria-label={`Play ${game.title}`}
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Play Game</span>
                 <ChevronRight className="w-4 h-4" />
-              </span>
+              </button>
             </div>
           </div>
         ))}

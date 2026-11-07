@@ -37,6 +37,7 @@ interface GameHubProps {
   onOpenVip: () => void;
   onRequestAgeGate: () => void;
   onOpenMultiplayer: () => void;
+  onOpenChess: () => void;
 }
 
 export const GameHub: React.FC<GameHubProps> = ({
@@ -48,6 +49,7 @@ export const GameHub: React.FC<GameHubProps> = ({
   onOpenVip,
   onRequestAgeGate,
   onOpenMultiplayer,
+  onOpenChess,
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
@@ -370,7 +372,7 @@ export const GameHub: React.FC<GameHubProps> = ({
 
         <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/10 text-xs">
           {[
-            { id: 'all', label: 'All 10 Games' },
+            { id: 'all', label: 'All 11 Games' },
             { id: 'spicy', label: 'Spicy & Bold' },
             { id: 'romantic', label: 'Romantic & Deep' },
             { id: 'speed', label: 'Timed & Wheel' },
@@ -438,6 +440,21 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Chess is a separate multiplayer experience, not a GameModeId deck game. */}
+      <section className="mt-5 rounded-3xl glass-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 border border-violet-400/20">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg">♞</div>
+          <div>
+            <h3 className="text-lg font-bold font-serif text-white">Chess</h3>
+            <p className="text-xs text-violet-200 mt-0.5">Classic strategy · Live online match · 2 accounts</p>
+            <p className="text-xs text-slate-300 mt-2">Challenge your partner to a full legal chess match with synchronized moves, turn tracking, and move explanations.</p>
+          </div>
+        </div>
+        <button type="button" onClick={() => { soundService.playClick(); onOpenChess(); }} className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-lg hover:brightness-110">
+          <Users className="w-4 h-4" /> Invite &amp; Play Chess <ChevronRight className="w-4 h-4" />
+        </button>
+      </section>
 
 
       {/* Completed Game History */}

@@ -144,6 +144,7 @@ export default function App() {
             onOpenVip={() => setIsVipOpen(true)}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
             onOpenMultiplayer={() => setIsMultiplayerOpen(true)}
+            onOpenChess={() => setIsMultiplayerOpen(true)}
           />
         )}
 

@@ -5,7 +5,7 @@ A private two-player couples game night PWA.
 ## Local development
 
 1. Install dependencies: `bun install`
-2. Copy `.env.example` to `.env` and add a server-side `GEMINI_API_KEY`.
+2. Copy `.env.example` to `.env`, add the server-side `GEMINI_API_KEY`, and set `FIREBASE_API_KEY` to the AFTER HOURS Firebase web API key. The Firebase project ID defaults to `after-hours-3fba0`.
 3. Start the Referee API in one terminal: `bun run dev:api`
 4. Start Vite in a second terminal: `bun run dev`
 5. Open the local Vite URL shown in the terminal.
@@ -21,7 +21,7 @@ The Vite development server proxies `/api/*` to the Express API on port 8787.
 
 Do not use a `VITE_GEMINI_API_KEY` variable. The Gemini key must remain server-side.
 
-## THE REFEREE privacy model
+## Authentication\n\n- AFTER HOURS uses its dedicated Firebase project (`after-hours-3fba0`) and Google sign-in.\n- The web app loads the Firebase compat SDK and keeps the Firebase session in local browser storage.\n- Protected Referee requests send a Firebase ID token; Express verifies it with Firebase Identity Toolkit before processing the request.\n- Configure `minou-rz-522216177682.us-east1.run.app` in Firebase Authentication → Settings → Authorized domains, and enable Google as a sign-in provider.\n- Keep the Firebase web API key as public Firebase configuration; never put a Google OAuth client secret or Firebase service-account private key in frontend code.\n\n## THE REFEREE privacy model
 
 - Player 1 and Player 2 memories are stored in separate browser-local scopes.
 - A private request sends only the active player's private memory plus mutually shared memories.

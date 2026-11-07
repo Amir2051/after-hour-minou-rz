@@ -10,6 +10,73 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const firebaseApiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || 'after-hours-3fba0';
+
+// Verify Firebase ID tokens with Google's Identity Toolkit before allowing API access.
+// The token is never logged or trusted based on browser-supplied profile fields.
+async function requireFirebaseAuth(req, res, next) {
+  const authorization = req.get('authorization') || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) return res.status(401).json({ error: 'Sign in to continue.' });
+  if (!firebaseApiKey) return res.status(503).json({ error: 'Firebase backend verification is not configured.' });
+  try {
+    const verification = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseApiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: match[1] }),
+    });
+    if (!verification.ok) return res.status(401).json({ error: 'Your sign-in session is invalid or expired. Sign in again.' });
+    const payload = await verification.json();
+    const account = payload.users?.[0];
+    if (!account || account.localId === undefined) return res.status(401).json({ error: 'Unable to verify your sign-in session.' });
+    // Identity Toolkit has validated the signature; also pin the token to this Firebase project.
+    // Identity Toolkit validates the token signature. Parse claims defensively so malformed
+    // tokens are rejected as authentication failures, not misreported as service outages.
+    const tokenParts = match[1].split('.');
+    if (tokenParts.length !== 3 || !tokenParts[1]) {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
+    let tokenClaims;
+    try {
+      tokenClaims = JSON.parse(Buffer.from(tokenParts[1], 'base64url').toString('utf8'));
+    } catch {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
+    if (!tokenClaims || typeof tokenClaims !== 'object' || Array.isArray(tokenClaims)) {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const clockSkewSeconds = 60;
+    const validTimes =
+      Number.isFinite(tokenClaims.exp) &&
+      Number.isFinite(tokenClaims.iat) &&
+      tokenClaims.exp > nowSeconds &&
+      tokenClaims.iat <= nowSeconds + clockSkewSeconds &&
+      (!Number.isFinite(tokenClaims.nbf) || tokenClaims.nbf <= nowSeconds + clockSkewSeconds);
+
+    if (
+      tokenClaims.aud !== firebaseProjectId ||
+      tokenClaims.iss !== `https://securetoken.google.com/${firebaseProjectId}` ||
+      tokenClaims.sub !== account.localId ||
+      !validTimes
+    ) {
+      return res.status(401).json({ error: 'Your sign-in token is invalid, expired, or does not belong to this AFTER HOURS project.' });
+    }
+    if (!account.providerUserInfo?.some(provider => provider.providerId === 'google.com')) {
+      return res.status(403).json({ error: 'Use Google sign-in for AFTER HOURS.' });
+    }
+    if (account.email && account.emailVerified !== true) return res.status(403).json({ error: 'Verify your email address before continuing.' });
+    req.authUser = { uid: account.localId, email: account.email || null, displayName: account.displayName || null };
+    next();
+  } catch (error) {
+    console.error('Firebase token verification unavailable:', error?.message || 'unknown error');
+    return res.status(503).json({ error: 'Sign-in verification is temporarily unavailable. Please try again.' });
+  }
+}
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -30,10 +97,10 @@ app.use('/api/referee', (req, res, next) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'after-hours-referee', geminiConfigured: Boolean(ai) });
+  res.json({ ok: true, service: 'after-hours-referee', geminiConfigured: Boolean(ai), firebaseConfigured: Boolean(firebaseApiKey && firebaseProjectId) });
 });
 
-app.post('/api/referee/ask', async (req, res) => {
+app.post('/api/referee/ask', requireFirebaseAuth, async (req, res) => {
   if (!ai) return res.status(503).json({ error: 'Gemini is not configured. Add GEMINI_API_KEY to the server environment.' });
 
   const { prompt, scope, activePlayer, partnerName, privateMemories, sharedMemories, adultContent, gameMode, history } = req.body || {};

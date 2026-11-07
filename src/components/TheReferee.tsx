@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { getFirebaseIdToken } from '../auth/firebase';
 import { BrainCircuit, X, Send, ShieldCheck, LockKeyhole, Sparkles, Trash2, Pause, Play, Heart, MessageCircle, Plus } from 'lucide-react';
 import { RefereeMessage, RefereeScope, refereeMemoryService } from '../services/referee';
 import { StoredPlayers } from '../services/storage';
@@ -49,9 +50,10 @@ export const TheReferee: React.FC<TheRefereeProps> = ({ players, adultConfirmed,
     const sharedMemories = memories.filter(memory => memory.scope === 'shared').map(memory => memory.text);
 
     try {
+      const idToken = await getFirebaseIdToken();
       const response = await fetch('/api/referee/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
           prompt: question,
           gameMode,

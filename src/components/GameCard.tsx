@@ -224,7 +224,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             <div className="absolute z-20 top-14 right-4 sm:right-6 rotate-6 pointer-events-none" aria-label={isSpicy ? '18 plus adult themed sticker' : 'Anime-inspired game sticker'}>
               <div className={`relative flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 shadow-xl backdrop-blur-md ${isSpicy ? 'bg-rose-950/90 border-rose-300/60 shadow-rose-950/50' : 'bg-purple-950/80 border-fuchsia-300/40 shadow-purple-950/50'}`}>
                 <span className="text-xl leading-none drop-shadow">{cardSticker}</span>
-                <span className={`text-[8px] leading-tight font-black tracking-widest ${isSpicy ? 'text-rose-200' : 'text-fuchsia-100'}`}>{isSpicy ? '18+ ONLY' : 'ANIME VIBE'}</span>
+                <span className={`text-[8px] leading-tight font-black tracking-widest ${isSpicy ? 'text-rose-200' : 'text-fuchsia-100'}`}>18+ ONLY</span>
                 <span className="absolute -top-2 -right-1 text-[10px]">✦</span>
               </div>
             </div>

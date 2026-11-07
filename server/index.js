@@ -30,6 +30,12 @@ async function requireFirebaseAuth(req, res, next) {
     const payload = await verification.json();
     const account = payload.users?.[0];
     if (!account || account.localId === undefined) return res.status(401).json({ error: 'Unable to verify your sign-in session.' });
+    // Identity Toolkit has validated the signature; also pin the token to this Firebase project.
+    const tokenClaims = JSON.parse(Buffer.from(match[1].split('.')[1] || '', 'base64url').toString('utf8'));
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (tokenClaims.aud !== firebaseProjectId || tokenClaims.iss !== `https://securetoken.google.com/${firebaseProjectId}` || tokenClaims.sub !== account.localId || !Number.isFinite(tokenClaims.exp) || tokenClaims.exp <= nowSeconds || tokenClaims.iat > nowSeconds) {
+      return res.status(401).json({ error: 'Your sign-in token does not belong to this AFTER HOURS project.' });
+    }
     if (!account.providerUserInfo?.some(provider => provider.providerId === 'google.com')) {
       return res.status(403).json({ error: 'Use Google sign-in for AFTER HOURS.' });
     }

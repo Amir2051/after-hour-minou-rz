@@ -31,10 +31,40 @@ async function requireFirebaseAuth(req, res, next) {
     const account = payload.users?.[0];
     if (!account || account.localId === undefined) return res.status(401).json({ error: 'Unable to verify your sign-in session.' });
     // Identity Toolkit has validated the signature; also pin the token to this Firebase project.
-    const tokenClaims = JSON.parse(Buffer.from(match[1].split('.')[1] || '', 'base64url').toString('utf8'));
+    // Identity Toolkit validates the token signature. Parse claims defensively so malformed
+    // tokens are rejected as authentication failures, not misreported as service outages.
+    const tokenParts = match[1].split('.');
+    if (tokenParts.length !== 3 || !tokenParts[1]) {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
+    let tokenClaims;
+    try {
+      tokenClaims = JSON.parse(Buffer.from(tokenParts[1], 'base64url').toString('utf8'));
+    } catch {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
+    if (!tokenClaims || typeof tokenClaims !== 'object' || Array.isArray(tokenClaims)) {
+      return res.status(401).json({ error: 'Your sign-in token is malformed. Sign in again.' });
+    }
+
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (tokenClaims.aud !== firebaseProjectId || tokenClaims.iss !== `https://securetoken.google.com/${firebaseProjectId}` || tokenClaims.sub !== account.localId || !Number.isFinite(tokenClaims.exp) || tokenClaims.exp <= nowSeconds || tokenClaims.iat > nowSeconds) {
-      return res.status(401).json({ error: 'Your sign-in token does not belong to this AFTER HOURS project.' });
+    const clockSkewSeconds = 60;
+    const validTimes =
+      Number.isFinite(tokenClaims.exp) &&
+      Number.isFinite(tokenClaims.iat) &&
+      tokenClaims.exp > nowSeconds &&
+      tokenClaims.iat <= nowSeconds + clockSkewSeconds &&
+      (!Number.isFinite(tokenClaims.nbf) || tokenClaims.nbf <= nowSeconds + clockSkewSeconds);
+
+    if (
+      tokenClaims.aud !== firebaseProjectId ||
+      tokenClaims.iss !== `https://securetoken.google.com/${firebaseProjectId}` ||
+      tokenClaims.sub !== account.localId ||
+      !validTimes
+    ) {
+      return res.status(401).json({ error: 'Your sign-in token is invalid, expired, or does not belong to this AFTER HOURS project.' });
     }
     if (!account.providerUserInfo?.some(provider => provider.providerId === 'google.com')) {
       return res.status(403).json({ error: 'Use Google sign-in for AFTER HOURS.' });

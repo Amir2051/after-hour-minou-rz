@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Eye, Check, X as XIcon, HelpCircle, Trophy } from 'lucide-react';
 import { HOW_WELL_KNOW_ME_DECK } from '../data/defaultDecks';
 import { GLOBAL_CATEGORIES, matchesCategoryFilter } from '../data/categories';
@@ -23,11 +24,12 @@ interface HowWellDoYouKnowMeProps {
 }
 
 export const HowWellDoYouKnowMe: React.FC<HowWellDoYouKnowMeProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
   onRequestAgeGate,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [turnIndex, setTurnIndex] = useState(0);
   const [phase, setPhase] = useState<'guesser' | 'target' | 'revealed'>('guesser');
@@ -121,6 +123,7 @@ export const HowWellDoYouKnowMe: React.FC<HowWellDoYouKnowMeProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : phase === 'revealed' ? 0 : phase === 'guesser' ? (turnIndex % 2 === 0 ? 1 : 0) : (turnIndex % 2 === 0 ? 0 : 1)}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={guesserPlayer}
@@ -277,5 +280,6 @@ export const HowWellDoYouKnowMe: React.FC<HowWellDoYouKnowMeProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

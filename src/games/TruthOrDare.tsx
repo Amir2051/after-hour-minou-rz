@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard, useMultiplayerHost } from '../multiplayer/useGameState';
 import { Sparkles, Dices, Flame } from 'lucide-react';
 import { GameCardItem, GameSettings } from '../types';
 import { TRUTH_OR_DARE_DECK } from '../data/defaultDecks';
@@ -19,11 +20,13 @@ interface TruthOrDareProps {
 }
 
 export const TruthOrDare: React.FC<TruthOrDareProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
   onRequestAgeGate,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
+  const isMultiplayerHost = useMultiplayerHost();
   // Check for existing active session
   const existingSession = useMemo(() => GameEngine.getSession('truth_or_dare'), []);
 
@@ -110,6 +113,7 @@ export const TruthOrDare: React.FC<TruthOrDareProps> = ({
 
   // Re-pick card when filter changes
   useEffect(() => {
+    if (!isMultiplayerHost) return;
     try {
       const next = GameEngine.getNextCard(combinedDeck, []);
       setCurrentCard(next.card);
@@ -117,7 +121,7 @@ export const TruthOrDare: React.FC<TruthOrDareProps> = ({
     } catch {
       // Ignore
     }
-  }, [selectedCategory, selectedType, combinedDeck]);
+  }, [selectedCategory, selectedType, combinedDeck, isMultiplayerHost]);
 
   // Auto-save session state
   useEffect(() => {
@@ -170,6 +174,7 @@ export const TruthOrDare: React.FC<TruthOrDareProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -292,5 +297,6 @@ export const TruthOrDare: React.FC<TruthOrDareProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

@@ -18,6 +18,11 @@ export function getFirebaseAuth(): any {
     ? window.firebase.app()
     : window.firebase.initializeApp(firebaseConfig);
   authInstance = app.auth();
+  const emulatorHost = import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST;
+  if (emulatorHost && !authInstance.emulatorConfig) {
+    const [host, portText] = emulatorHost.split(':');
+    authInstance.useEmulator(`http://${host}:${Number(portText || 9099)}`);
+  }
   return authInstance;
 }
 

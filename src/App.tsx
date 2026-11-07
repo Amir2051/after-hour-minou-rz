@@ -25,9 +25,28 @@ import { GameModeId, GameSettings } from './types';
 import { storageService, StoredPlayers } from './services/storage';
 import { soundService } from './services/audio';
 import { TheReferee } from './components/TheReferee';
+import { MultiplayerLobby } from './multiplayer/MultiplayerLobby';
+import { ChessGame } from './multiplayer/ChessGame';
+import { MultiplayerGameProvider } from './multiplayer/useGameState';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'hub' | GameModeId>('hub');
+  const [currentView, setCurrentView] = useState<'hub' | 'chess' | GameModeId>('hub');
+  const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
+  const [activeChessGameId, setActiveChessGameId] = useState<string | null>(null);
+  const [activeGameSessionId, setActiveGameSessionId] = useState<string | null>(null);
+
+  const exitGame = () => {
+    setCurrentView('hub'); setActiveChessGameId(null); setActiveGameSessionId(null);
+    const url = new URL(window.location.href); url.searchParams.delete('session'); url.searchParams.delete('mode');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+  const startInvitedGame = (gameId: string, gameType: 'chess' | GameModeId) => {
+    if (gameType === 'chess') { setActiveChessGameId(gameId); setActiveGameSessionId(null); setCurrentView('chess'); }
+    else { setActiveGameSessionId(gameId); setActiveChessGameId(null); setCurrentView(gameType); }
+    const url = new URL(window.location.href); url.searchParams.set('session', gameId); url.searchParams.set('mode', gameType);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    setIsMultiplayerOpen(false);
+  };
   const [players, setPlayers] = useState<StoredPlayers>(storageService.getPlayers());
   const [settings, setSettings] = useState<GameSettings>(storageService.getSettings());
   const [soundEnabled, setSoundEnabled] = useState<boolean>(settings.soundEnabled);
@@ -37,6 +56,22 @@ export default function App() {
   const [isCustomBuilderOpen, setIsCustomBuilderOpen] = useState(false);
   const [isVipOpen, setIsVipOpen] = useState(false);
   const [isAgeGateOpen, setIsAgeGateOpen] = useState(false);
+
+  // A shared invitation link opens the inbox after the recipient has signed in.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const sessionId = url.searchParams.get('session');
+    const mode = url.searchParams.get('mode');
+    if (sessionId && mode) {
+      if (mode === 'chess') { setActiveChessGameId(sessionId); setCurrentView('chess'); }
+      else if (['truth_or_dare','how_well_know_me','would_you_rather','never_have_i_ever','spicy_challenge','who_is_more_likely','finish_the_sentence','challenge_wheel','memory_lane','sixty_seconds'].includes(mode)) { setActiveGameSessionId(sessionId); setCurrentView(mode as GameModeId); }
+    }
+    if (url.searchParams.has('invite')) {
+      setIsMultiplayerOpen(true);
+      url.searchParams.delete('invite');
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+  }, []);
 
   // Sync sound service on start
   useEffect(() => {
@@ -93,7 +128,12 @@ export default function App() {
       />
 
       {/* Main Content Area */}
+      <MultiplayerGameProvider sessionId={activeGameSessionId || ''}>
       <main className="flex-1 w-full pb-16">
+        {currentView === 'chess' && activeChessGameId && (
+          <ChessGame gameId={activeChessGameId} onExit={exitGame} />
+        )}
+
         {currentView === 'hub' && (
           <GameHub
             players={players}
@@ -103,6 +143,7 @@ export default function App() {
             onOpenCustomBuilder={() => setIsCustomBuilderOpen(true)}
             onOpenVip={() => setIsVipOpen(true)}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
+            onOpenMultiplayer={() => setIsMultiplayerOpen(true)}
           />
         )}
 
@@ -110,7 +151,7 @@ export default function App() {
           <TruthOrDare
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -119,7 +160,7 @@ export default function App() {
           <HowWellDoYouKnowMe
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -128,7 +169,7 @@ export default function App() {
           <WouldYouRather
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -137,7 +178,7 @@ export default function App() {
           <NeverHaveIEver
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -146,7 +187,7 @@ export default function App() {
           <SpicyChallenge
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -155,7 +196,7 @@ export default function App() {
           <WhoIsMoreLikelyTo
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
             onRequestAgeGate={() => setIsAgeGateOpen(true)}
           />
         )}
@@ -164,7 +205,7 @@ export default function App() {
           <FinishTheSentence
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
           />
         )}
 
@@ -172,7 +213,7 @@ export default function App() {
           <ChallengeWheel
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
           />
         )}
 
@@ -180,7 +221,7 @@ export default function App() {
           <MemoryLane
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
           />
         )}
 
@@ -188,10 +229,11 @@ export default function App() {
           <SixtySecondChallenge
             players={players}
             settings={settings}
-            onExit={() => setCurrentView('hub')}
+            onExit={exitGame}
           />
         )}
       </main>
+      </MultiplayerGameProvider>
 
       {/* Subtle, Sophisticated Footer */}
       <footer className="w-full border-t border-pink-500/10 py-6 px-4 text-center text-xs text-slate-500 bg-[#09060e]/50 backdrop-blur-sm">
@@ -258,7 +300,9 @@ export default function App() {
         onCancel={() => setIsAgeGateOpen(false)}
       />
 
-      <TheReferee players={players} adultConfirmed={settings.adultConfirmed} gameMode={currentView} onRequestAgeGate={() => setIsAgeGateOpen(true)} />
+      {isMultiplayerOpen && <MultiplayerLobby onClose={() => setIsMultiplayerOpen(false)} onStartGame={startInvitedGame} />}
+
+      {currentView !== 'chess' && <TheReferee players={players} adultConfirmed={settings.adultConfirmed} gameMode={currentView} onRequestAgeGate={() => setIsAgeGateOpen(true)} />}
     </div>
   );
 }

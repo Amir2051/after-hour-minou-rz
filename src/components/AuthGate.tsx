@@ -1,13 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getFirebaseAuth } from '../auth/firebase';
+import { AuthUserProvider, type AuthUser } from '../auth/AuthContext';
 import { LoaderCircle, LogOut, ShieldCheck } from 'lucide-react';
 
-type AuthUser = {
-  uid: string;
-  displayName?: string | null;
-  email?: string | null;
-  photoURL?: string | null;
-};
 
 export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -67,7 +62,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
       if (code === 'auth/popup-blocked') {
         setError('Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again.');
       } else if (code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorized in Firebase. Add the AFTER HOURS Cloud Run domain under Authentication → Settings → Authorized domains.');
+        setError(`This website domain is not authorized for Google sign-in. Add ${window.location.hostname} under Firebase Console → Authentication → Settings → Authorized domains, then refresh.`);
       } else if (code === 'auth/operation-not-allowed') {
         setError('Google sign-in is not enabled in this Firebase project yet.');
       } else if (code === 'auth/invalid-api-key') {
@@ -105,7 +100,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
           </div>
           <p className="text-[11px] uppercase tracking-[.35em] text-violet-200/75">Two players. One private night.</p>
           <h1 className="mt-3 font-serif text-4xl font-semibold tracking-wide text-white">AFTER HOURS</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">Sign in to enter your private game night.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">Create your account or sign in to enter your private game night. New players are registered automatically with Google.</p>
           <button
             type="button"
             onClick={signIn}
@@ -113,7 +108,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
             className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white px-5 py-3.5 font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {working ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <svg aria-hidden="true" viewBox="0 0 48 48" className="h-5 w-5"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 3.01 13.22l7.98 6.19C12.87 13.72 18.03 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.91c-.58 2.96-2.25 5.47-4.73 7.16l7.63 5.91c4.46-4.12 7.17-10.2 7.17-17.54Z"/><path fill="#FBBC05" d="M10.99 28.59A14.4 14.4 0 0 1 10.2 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 2.98 10.78l8.01-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.91l-7.63-5.91c-2.12 1.43-4.84 2.27-8.27 2.27-5.97 0-11.13-4.22-13.01-9.91l-8.01 6.19C6.49 43.12 14.62 48 24 48Z"/></svg>}
-            Continue with Google
+            Create account / Sign in with Google
           </button>
           {error && <p role="alert" className="mt-5 rounded-xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-left text-sm leading-5 text-rose-200">{error}</p>}
           <div className="mt-7 flex items-center justify-center gap-2 text-xs text-slate-400"><ShieldCheck className="h-4 w-4 text-emerald-300" /> Secured by Firebase Authentication</div>
@@ -125,6 +120,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
   }
 
   return (
+    <AuthUserProvider value={user}>
     <>
       {children}
       <div className="fixed bottom-4 right-4 z-[70] flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full border border-violet-200/20 bg-[#101326]/95 py-1.5 pl-2 pr-2 shadow-xl backdrop-blur-xl">
@@ -134,5 +130,6 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
       </div>
       {error && <div role="alert" className="fixed bottom-20 right-4 z-[70] max-w-sm rounded-xl border border-rose-400/25 bg-[#241326] px-4 py-3 text-sm text-rose-100 shadow-xl">{error}</div>}
     </>
+    </AuthUserProvider>
   );
 };

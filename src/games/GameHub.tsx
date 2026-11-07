@@ -36,6 +36,7 @@ interface GameHubProps {
   onOpenCustomBuilder: () => void;
   onOpenVip: () => void;
   onRequestAgeGate: () => void;
+  onOpenMultiplayer: () => void;
 }
 
 export const GameHub: React.FC<GameHubProps> = ({
@@ -46,6 +47,7 @@ export const GameHub: React.FC<GameHubProps> = ({
   onOpenCustomBuilder,
   onOpenVip,
   onRequestAgeGate,
+  onOpenMultiplayer,
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
@@ -238,6 +240,13 @@ export const GameHub: React.FC<GameHubProps> = ({
             >
               <Play className="w-4 h-4 fill-white" />
               <span>Quick Start · Truth or Dare</span>
+            </button>
+
+            <button
+              onClick={() => { soundService.playClick(); onOpenMultiplayer(); }}
+              className="py-3 px-5 rounded-2xl bg-violet-500/15 border border-violet-300/25 text-violet-100 hover:bg-violet-500/25 text-xs sm:text-sm font-semibold transition flex items-center gap-2"
+            >
+              <Users className="w-4 h-4" /> Invite a player · Any game
             </button>
 
             <button

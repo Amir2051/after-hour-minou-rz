@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Eye, Check, Sparkles, Heart } from 'lucide-react';
 import { WOULD_YOU_RATHER_DECK } from '../data/defaultDecks';
 import { GLOBAL_CATEGORIES, matchesCategoryFilter } from '../data/categories';
@@ -23,11 +24,12 @@ interface WouldYouRatherProps {
 }
 
 export const WouldYouRather: React.FC<WouldYouRatherProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
   onRequestAgeGate,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
   const [cardIndex, setCardIndex] = useState(0);
   const [p1Choice, setP1Choice] = useState<'A' | 'B' | null>(null);
   const [p2Choice, setP2Choice] = useState<'A' | 'B' | null>(null);
@@ -115,6 +117,7 @@ export const WouldYouRather: React.FC<WouldYouRatherProps> = ({
   };
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : stage === 'revealed' ? 0 : stage === 'p1_turn' ? 0 : 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={stage === 'p1_turn' ? players.player1 : stage === 'p2_turn' ? players.player2 : 'Both Players'}
@@ -302,5 +305,6 @@ export const WouldYouRather: React.FC<WouldYouRatherProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

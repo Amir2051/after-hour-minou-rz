@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useGameState as useState, useMultiplayerPlayers, useMultiplayerHost, MultiplayerTurnGuard } from '../multiplayer/useGameState';
 import { Play, Pause, RotateCcw, Timer, Check, SkipForward, Flame } from 'lucide-react';
 import { SIXTY_SECOND_CHALLENGES } from '../data/defaultDecks';
 import { TurnIndicator } from '../components/TurnIndicator';
@@ -20,10 +21,12 @@ interface SixtySecondChallengeProps {
 }
 
 export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
-  players,
+  players: localPlayers,
   settings,
   onExit,
 }) => {
+  const players = useMultiplayerPlayers(localPlayers);
+  const isMultiplayerHost = useMultiplayerHost();
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [turnIndex, setTurnIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -39,12 +42,14 @@ export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
 
   // Reset timer on challenge change
   useEffect(() => {
+    if (!isMultiplayerHost) return;
     setTimeLeft(currentChallenge.seconds);
     setIsRunning(false);
-  }, [challengeIndex, currentChallenge]);
+  }, [challengeIndex, currentChallenge, isMultiplayerHost]);
 
   // Countdown timer effect
   useEffect(() => {
+    if (!isMultiplayerHost) return;
     let interval: NodeJS.Timeout | null = null;
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
@@ -64,7 +69,7 @@ export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeLeft]);
+  }, [isRunning, timeLeft, isMultiplayerHost]);
 
   const handleNextChallenge = (awarded: number) => {
     if (awarded > 0 && settings.scoringEnabled) {
@@ -89,6 +94,7 @@ export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
   const timerProgress = ((currentChallenge.seconds - timeLeft) / currentChallenge.seconds) * 100;
 
   return (
+    <MultiplayerTurnGuard onExit={onExit} slot={isGameOver ? 'both' : (turnIndex % 2) as 0 | 1}>
     <div className="max-w-2xl mx-auto px-4 py-6">
       <TurnIndicator
         activePlayer={activePlayer}
@@ -206,5 +212,6 @@ export const SixtySecondChallenge: React.FC<SixtySecondChallengeProps> = ({
         onReturnHome={onExit}
       />
     </div>
+    </MultiplayerTurnGuard>
   );
 };

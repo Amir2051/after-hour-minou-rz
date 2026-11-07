@@ -17,7 +17,7 @@ const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || 'after-hours-3fba0'
 // The token is never logged or trusted based on browser-supplied profile fields.
 async function requireFirebaseAuth(req, res, next) {
   const authorization = req.get('authorization') || '';
-  const match = authorization.match(/^Bearer\\s+(.+)$/i);
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!match) return res.status(401).json({ error: 'Sign in to continue.' });
   if (!firebaseApiKey) return res.status(503).json({ error: 'Firebase backend verification is not configured.' });
   try {

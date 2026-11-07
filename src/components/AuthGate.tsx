@@ -18,23 +18,39 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
 
   useEffect(() => {
     let unsubscribe = () => {};
-    try {
-      const auth = getFirebaseAuth();
-      auth.setPersistence(window.firebase!.auth.Auth.Persistence.LOCAL).catch(() => undefined);
-      unsubscribe = auth.onAuthStateChanged((nextUser: AuthUser | null) => {
-        setUser(nextUser);
+    let cancelled = false;
+
+    const initializeAuth = async () => {
+      try {
+        const auth = getFirebaseAuth();
+        // Do not subscribe to auth state until the requested persistence mode is ready.
+        // This prevents the app from racing session restoration against persistence setup.
+        await auth.setPersistence(window.firebase!.auth.Auth.Persistence.LOCAL);
+        if (cancelled) return;
+
+        unsubscribe = auth.onAuthStateChanged((nextUser: AuthUser | null) => {
+          if (cancelled) return;
+          setUser(nextUser);
+          setLoading(false);
+          setError('');
+        }, (authError: any) => {
+          if (cancelled) return;
+          setError(authError?.message || 'Unable to restore your sign-in session.');
+          setLoading(false);
+        });
+      } catch (authError: any) {
+        if (cancelled) return;
+        setAuthUnavailable(true);
+        setError(authError?.message || 'Firebase Authentication is unavailable.');
         setLoading(false);
-        setError('');
-      }, (authError: any) => {
-        setError(authError?.message || 'Unable to restore your sign-in session.');
-        setLoading(false);
-      });
-    } catch (authError: any) {
-      setAuthUnavailable(true);
-      setError(authError?.message || 'Firebase Authentication is unavailable.');
-      setLoading(false);
-    }
-    return () => unsubscribe();
+      }
+    };
+
+    void initializeAuth();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async () => {
@@ -42,6 +58,7 @@ export const AuthGate: React.FC<React.PropsWithChildren> = ({ children }) => {
     setError('');
     try {
       const auth = getFirebaseAuth();
+      await auth.setPersistence(window.firebase!.auth.Auth.Persistence.LOCAL);
       const provider = new window.firebase!.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await auth.signInWithPopup(provider);

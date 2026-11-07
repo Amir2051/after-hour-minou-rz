@@ -1,5 +1,3 @@
-import.meta.env;
-
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDutkbB8EyNQZOAuhGEQD_R4QeYc8YFvaY',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'after-hours-3fba0.firebaseapp.com',

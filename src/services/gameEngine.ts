@@ -4,6 +4,7 @@
  */
 
 import { GameCardItem, GameModeId } from '../types';
+import { streakService } from './streak';
 
 export interface ActiveGameSessionState {
   gameMode: GameModeId;
@@ -85,6 +86,8 @@ export class GameEngine {
         ...session,
         lastUpdated: Date.now(),
       }));
+      // Record game activity toward daily streak
+      streakService.recordGamePlay();
     } catch {
       // Ignore write errors in private browsing quota limits
     }

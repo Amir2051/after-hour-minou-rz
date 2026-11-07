@@ -4,6 +4,10 @@
  */
 
 import { GameSettings, CustomCard, GameHistoryEntry } from '../types';
+import { streakService, DailyStreakData } from './streak';
+
+export { streakService };
+export type { DailyStreakData };
 
 const STORAGE_KEYS = {
   PLAYERS: 'after_hours_players',
@@ -13,6 +17,7 @@ const STORAGE_KEYS = {
   HISTORY: 'after_hours_history',
   MEMORIES: 'after_hours_memories',
   VIP_STATUS: 'after_hours_vip_status',
+  STREAK: 'after_hours_daily_streak',
 };
 
 export interface StoredPlayers {
@@ -177,9 +182,19 @@ export const storageService = {
       const history = this.getHistory();
       const next = [entry, ...history.filter(item => item.timestamp !== entry.timestamp)].slice(0, 100);
       localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(next));
+      // Automatically record daily streak on completed session
+      streakService.recordGamePlay(entry.timestamp ? new Date(entry.timestamp) : new Date());
     } catch {
       // Ignored
     }
+  },
+
+  getStreak(): DailyStreakData {
+    return streakService.getStreak();
+  },
+
+  recordGamePlay(date?: Date): DailyStreakData {
+    return streakService.recordGamePlay(date);
   },
 
   clearHistory(): void {

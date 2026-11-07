@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Flame,
   Heart,
@@ -25,8 +25,10 @@ import {
   X
 } from 'lucide-react';
 import { GameModeId, IntensityLevel, GameSettings } from '../types';
-import { StoredPlayers, storageService } from '../services/storage';
+import { StoredPlayers, storageService, DailyStreakData } from '../services/storage';
+import { streakService } from '../services/streak';
 import { soundService } from '../services/audio';
+import { DailyStreakModal } from '../components/DailyStreakModal';
 
 interface GameHubProps {
   players: StoredPlayers;
@@ -52,7 +54,21 @@ export const GameHub: React.FC<GameHubProps> = ({
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'spicy' | 'romantic' | 'speed' | 'favorites'>('all');
   const [showMemoriesModal, setShowMemoriesModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const [, setHistoryVersion] = useState(0);
+  const [streak, setStreak] = useState<DailyStreakData>(() => streakService.getStreak());
+
+  useEffect(() => {
+    const handleStreakUpdate = () => {
+      setStreak(streakService.getStreak());
+    };
+    window.addEventListener('after_hours_streak_updated', handleStreakUpdate);
+    window.addEventListener('storage', handleStreakUpdate);
+    return () => {
+      window.removeEventListener('after_hours_streak_updated', handleStreakUpdate);
+      window.removeEventListener('storage', handleStreakUpdate);
+    };
+  }, []);
 
   const customCardsCount = storageService.getCustomCards().length;
   const favoritesCount = storageService.getFavorites().length;
@@ -199,6 +215,8 @@ export const GameHub: React.FC<GameHubProps> = ({
       onRequestAgeGate();
       return;
     }
+    const updated = streakService.recordGamePlay();
+    setStreak(updated);
     onSelectGame(game.id);
   };
 
@@ -217,17 +235,75 @@ export const GameHub: React.FC<GameHubProps> = ({
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-pink-600/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-purple-600/15 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="relative z-10">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <span className="text-xs uppercase tracking-widest text-pink-400 font-semibold flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Two Players · No Limits · Just Good Times
             </span>
+
+            {/* Daily Streak Motivating Badge */}
+            <button
+              onClick={() => {
+                soundService.playClick();
+                setShowStreakModal(true);
+              }}
+              className="group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-rose-500/15 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 border border-amber-400/40 hover:border-amber-300/70 shadow-lg shadow-amber-950/40 transition-all duration-300 active:scale-95 text-left cursor-pointer"
+              title="Daily Streak · Click to view streak details & milestones"
+              aria-label="Daily Streak details"
+            >
+              <div className="relative flex items-center justify-center">
+                <div
+                  className={`absolute -inset-1 rounded-full ${
+                    streak.playedToday
+                      ? 'bg-amber-400/40 blur-sm animate-pulse'
+                      : streak.currentStreak > 0
+                      ? 'bg-rose-500/30 blur-[2px]'
+                      : 'bg-white/10'
+                  }`}
+                />
+                <Flame
+                  className={`w-4 h-4 relative z-10 transition-transform group-hover:scale-110 ${
+                    streak.playedToday
+                      ? 'text-amber-300 fill-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.9)] animate-pulse'
+                      : streak.currentStreak > 0
+                      ? 'text-amber-400 fill-amber-500/50'
+                      : 'text-slate-400'
+                  }`}
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black font-mono tracking-tight text-white drop-shadow-sm">
+                  {streak.currentStreak} {streak.currentStreak === 1 ? 'Day' : 'Days'}
+                </span>
+                <span className="text-[10px] text-amber-200/90 font-semibold uppercase tracking-wider">
+                  Streak
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 pl-1.5 border-l border-white/20">
+                {streak.playedToday ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                    <span>Active</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+                    <span>Play today!</span>
+                  </span>
+                )}
+              </div>
+
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors group-hover:translate-x-0.5" />
+            </button>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight leading-tight text-glow-pink">
-            Turn Up The Heat Together.
-          </h1>
+          <div className="max-w-2xl">
+            <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight leading-tight text-glow-pink">
+              Turn Up The Heat Together.
+            </h1>
 
           <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
             Playing as <strong className="text-pink-300">{players.player1}</strong> &amp; <strong className="text-purple-300">{players.player2}</strong> ({stageLabels[settings.relationshipStage] || 'Couple'}). Pass the phone, flirt fearlessly, and explore each other.
@@ -274,9 +350,33 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
       </div>
+    </div>
 
       {/* Quick Action Ribbon */}
-      <div className="mb-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Daily Streak Card */}
+        <button
+          onClick={() => {
+            soundService.playClick();
+            setShowStreakModal(true);
+          }}
+          className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-900/80 to-rose-950/30 border border-amber-500/35 hover:border-amber-400/60 text-left transition group active:scale-98 relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between text-amber-400 mb-1">
+            <Flame className="w-4 h-4 fill-amber-400/40 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              {streak.currentStreak}d
+            </span>
+          </div>
+          <div className="text-xs font-semibold text-white flex items-center gap-1">
+            Daily Streak
+            {streak.playedToday && <span className="text-[10px] text-emerald-400">✓</span>}
+          </div>
+          <div className="text-[10px] text-slate-400 truncate">
+            {streak.playedToday ? 'Flame burning!' : 'Play today to grow'}
+          </div>
+        </button>
+
         <button
           onClick={() => {
             soundService.playClick();
@@ -585,6 +685,15 @@ export const GameHub: React.FC<GameHubProps> = ({
           </div>
         </div>
       )}
+
+      {/* Daily Streak Modal */}
+      <DailyStreakModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        streak={streak}
+        players={players}
+        onPlayGame={() => handleGameClick(games[0])}
+      />
     </div>
   );
 };

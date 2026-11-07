@@ -18,6 +18,7 @@ import {
   SIXTY_SECOND_CHALLENGES
 } from '../data/defaultDecks';
 import { storageService } from '../services/storage';
+import { streakService, formatLocalDate, daysBetween } from '../services/streak';
 
 // Mock localStorage for node environment
 const storageMock: Record<string, string> = {};
@@ -135,6 +136,56 @@ assert(storageService.getHistory().length === 1, 'Completed session is saved to 
 assert(storageService.getHistory()[0]?.player1Score === 40, 'History preserves both players’ final scores');
 storageService.clearHistory();
 assert(storageService.getHistory().length === 0, 'Game history can be cleared independently');
+
+// Test 7: Daily Streak Tracking & Rollover Math
+console.log('\n[7] Daily Streak Tracking & Rollover Math:');
+streakService.resetStreak();
+const initialStreak = streakService.getStreak();
+assert(initialStreak.currentStreak === 0, 'Initial streak begins at 0');
+assert(initialStreak.playedToday === false, 'Initial state has playedToday = false');
+
+// Day 1 play
+const day1 = new Date('2026-11-01T14:00:00');
+const streakAfterDay1 = streakService.recordGamePlay(day1);
+assert(streakAfterDay1.currentStreak === 1, 'First play creates a 1-day streak');
+assert(streakAfterDay1.playedToday === true, 'Played today is true on Day 1');
+assert(streakAfterDay1.longestStreak === 1, 'Longest streak tracks 1 day');
+
+// Same day replay shouldn't increment streak counter
+const streakAfterReplay = streakService.recordGamePlay(day1);
+assert(streakAfterReplay.currentStreak === 1, 'Playing again on same day preserves 1-day streak');
+
+// Day 2 (consecutive day)
+const day2 = new Date('2026-11-02T18:00:00');
+const checkBeforeDay2Play = streakService.getStreak(day2);
+assert(checkBeforeDay2Play.currentStreak === 1, 'Streak is still active on Day 2 morning before playing');
+assert(checkBeforeDay2Play.playedToday === false, 'Played today is false on Day 2 morning');
+
+const streakAfterDay2 = streakService.recordGamePlay(day2);
+assert(streakAfterDay2.currentStreak === 2, 'Playing on consecutive day increments streak to 2');
+assert(streakAfterDay2.longestStreak === 2, 'Longest streak updates to 2');
+assert(streakAfterDay2.playedToday === true, 'Played today is true after Day 2 play');
+
+// Day 3 (consecutive day)
+const day3 = new Date('2026-11-03T20:00:00');
+const streakAfterDay3 = streakService.recordGamePlay(day3);
+assert(streakAfterDay3.currentStreak === 3, 'Consecutive day 3 play increments streak to 3');
+assert(streakAfterDay3.longestStreak === 3, 'Longest streak updates to 3');
+
+// Missed Day 4, checking on Day 5 (broken streak)
+const day5 = new Date('2026-11-05T12:00:00');
+const checkOnDay5 = streakService.getStreak(day5);
+assert(checkOnDay5.currentStreak === 0, 'Streak resets to 0 after missing day 4');
+assert(checkOnDay5.longestStreak === 3, 'Longest streak record (3) is retained after reset');
+
+// Playing on Day 5 restarts fresh streak
+const streakAfterDay5 = streakService.recordGamePlay(day5);
+assert(streakAfterDay5.currentStreak === 1, 'Playing on Day 5 restarts streak at 1');
+assert(streakAfterDay5.longestStreak === 3, 'Longest streak record remains preserved at 3');
+
+// daysBetween helper
+assert(daysBetween('2026-11-01', '2026-11-02') === 1, 'daysBetween correctly identifies 1 day gap');
+assert(daysBetween('2026-11-01', '2026-11-05') === 4, 'daysBetween correctly identifies multi-day gap');
 
 
 console.log(`\n========================================`);

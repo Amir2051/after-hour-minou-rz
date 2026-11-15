@@ -97,7 +97,86 @@ app.use('/api/referee', (req, res, next) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'after-hours-referee', geminiConfigured: Boolean(ai), firebaseConfigured: Boolean(firebaseApiKey && firebaseProjectId) });
+  res.json({ ok: true, service: 'after-hours-referee', geminiConfigured: Boolean(ai), firebaseConfigured: Boolean(firebaseApiKey && firebaseProjectId), emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM) });
+});
+
+// Send a real email only after verifying the invite document with the caller's
+// Firebase identity. Firestore security rules remain the authority for access.
+const inviteEmailWindows = new Map();
+app.post('/api/invites/send-email', requireFirebaseAuth, async (req, res) => {
+  const now = Date.now();
+  const previous = inviteEmailWindows.get(req.authUser.uid);
+  if (previous && now - previous.startedAt < 60 * 60 * 1000 && previous.count >= 8) {
+    return res.status(429).json({ error: 'You have reached the invitation email limit. Try again later.' });
+  }
+  if (!previous || now - previous.startedAt >= 60 * 60 * 1000) inviteEmailWindows.set(req.authUser.uid, { startedAt: now, count: 1 });
+  else previous.count += 1;
+
+  const inviteId = typeof req.body?.inviteId === 'string' ? req.body.inviteId.trim() : '';
+  if (!/^[A-Za-z0-9_-]{10,80}$/.test(inviteId)) {
+    return res.status(400).json({ error: 'A valid invitation ID is required.' });
+  }
+  if (!req.authUser.email) return res.status(403).json({ error: 'Your account needs a verified email address.' });
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) {
+    return res.status(503).json({ error: 'Email delivery is not configured yet. Your invitation is saved; share its link manually for now.' });
+  }
+
+  try {
+    const documentUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId)}/databases/(default)/documents/gameInvites/${encodeURIComponent(inviteId)}`;
+    const inviteResponse = await fetch(documentUrl, { headers: { Authorization: `Bearer ${req.get('authorization').slice(7)}` } });
+    if (inviteResponse.status === 404) return res.status(404).json({ error: 'Invitation not found. Refresh the lobby and try again.' });
+    if (!inviteResponse.ok) {
+      console.error('Invite verification failed with Firestore status:', inviteResponse.status);
+      return res.status(502).json({ error: 'Could not verify the invitation. Please try again.' });
+    }
+    const document = await inviteResponse.json();
+    const fields = document.fields || {};
+    const value = (field) => fields[field]?.stringValue ?? '';
+    const senderUid = value('senderUid');
+    const senderEmail = value('senderEmail').toLowerCase();
+    const recipientEmail = value('recipientEmail').toLowerCase();
+    const gameType = value('gameType');
+    const status = value('status');
+    const senderName = value('senderName') || req.authUser.displayName || req.authUser.email;
+    const allowedGames = new Set(['chess', 'truth_or_dare', 'how_well_know_me', 'would_you_rather', 'never_have_i_ever', 'spicy_challenge', 'who_is_more_likely', 'finish_the_sentence', 'challenge_wheel', 'memory_lane', 'sixty_seconds']);
+    const labels = { chess: 'Chess', truth_or_dare: 'Truth or Dare', how_well_know_me: 'How Well Do You Know Me?', would_you_rather: 'Would You Rather?', never_have_i_ever: 'Never Have I Ever', spicy_challenge: 'Spicy Challenge', who_is_more_likely: 'Who Is More Likely To?', finish_the_sentence: 'Finish the Sentence', challenge_wheel: 'Challenge Wheel', memory_lane: 'Memory Lane', sixty_seconds: '60-Second Challenge' };
+    if (senderUid !== req.authUser.uid || senderEmail !== req.authUser.email.toLowerCase()) {
+      return res.status(403).json({ error: 'You are not authorized to send this invitation.' });
+    }
+    if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail) || recipientEmail === senderEmail || status !== 'pending' || !allowedGames.has(gameType)) {
+      return res.status(409).json({ error: 'This invitation is no longer valid for email delivery.' });
+    }
+
+    const baseUrl = process.env.APP_URL || 'https://minou-rz-qdpm3vdneq-ue.a.run.app';
+    const appUrl = new URL(baseUrl);
+    if (appUrl.protocol !== 'https:') throw new Error('APP_URL must use HTTPS.');
+    appUrl.searchParams.set('invite', inviteId);
+    const gameName = labels[gameType];
+    const escapeHtml = value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+    const senderText = String(senderName).replace(/[<>]/g, '').slice(0, 100);
+    const safeSender = escapeHtml(senderText);
+    const safeRecipient = escapeHtml(recipientEmail);
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM,
+        to: [recipientEmail],
+        subject: `${senderText} invited you to play ${gameName} on AFTER HOURS`,
+        text: `${senderText} invited you to play ${gameName} on AFTER HOURS.\n\nAccept your invitation: ${appUrl.toString()}\n\nSign in or create your AFTER HOURS account using ${recipientEmail}, then accept the invitation in your multiplayer lobby. Invitations are private to the invited email address.`,
+        html: `<div style="margin:0;background:#09070d;padding:36px 16px;font-family:Arial,sans-serif;color:#fff"><div style="max-width:560px;margin:auto;border:1px solid #58305d;border-radius:20px;padding:32px;background:#160f1c"><p style="color:#d7a8ff;letter-spacing:4px;font-size:11px">AFTER HOURS</p><h1 style="font-size:28px">You have a game invitation</h1><p style="color:#ddd">${safeSender.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')} invited you to play <strong>${gameName}</strong>.</p><p style="color:#bbb">Sign in or create your account using <strong>${safeRecipient}</strong>, then accept the invitation in your multiplayer lobby.</p><p style="margin:28px 0"><a href="${appUrl.toString()}" style="background:#9333ea;color:white;text-decoration:none;padding:14px 22px;border-radius:12px;font-weight:bold">Accept invitation</a></p><p style="font-size:12px;color:#999">This private invitation is only available to ${safeRecipient}.</p></div></div>`
+      }),
+    });
+    const resendBody = await resendResponse.json().catch(() => ({}));
+    if (!resendResponse.ok) {
+      console.error('Resend rejected invite email with status:', resendResponse.status, 'code:', resendBody.name || resendBody.statusCode || 'unknown');
+      return res.status(502).json({ error: 'The invitation was saved, but the email provider could not accept the message. You can still share the invitation link.' });
+    }
+    return res.json({ ok: true, emailId: resendBody.id });
+  } catch (error) {
+    console.error('Invite email delivery failed:', error?.message || 'unknown error');
+    return res.status(502).json({ error: 'The invitation was saved, but email delivery failed. You can still share the invitation link.' });
+  }
 });
 
 app.post('/api/referee/ask', requireFirebaseAuth, async (req, res) => {

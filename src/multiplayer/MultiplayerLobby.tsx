@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Mail, Check, X, Copy, Users, Clock3, Swords } from 'lucide-react';
 import { useAuthUser } from '../auth/AuthContext';
 import { getFirestoreDb, serverTimestamp } from './firestore';
+import { getFirebaseIdToken } from '../auth/firebase';
 
 const GAME_OPTIONS: { id: 'chess' | GameModeId; label: string }[] = [
   { id: 'chess', label: 'Chess' },
@@ -67,7 +68,7 @@ export const MultiplayerLobby: React.FC<Props> = ({ onClose, onStartGame }) => {
     if (recipientEmail === user.email.toLowerCase()) return setError('You cannot invite your own account.');
     setWorking(true);
     try {
-      await db.collection('gameInvites').add({
+      const inviteRef = await db.collection('gameInvites').add({
         senderUid: user.uid,
         senderEmail: user.email.toLowerCase(),
         senderName: user.displayName || user.email,
@@ -77,9 +78,20 @@ export const MultiplayerLobby: React.FC<Props> = ({ onClose, onStartGame }) => {
         createdAt: serverTimestamp(),
       });
       setEmail('');
-      setNotice(`${gameLabel(selectedGame)} invitation sent to ${recipientEmail}. They must sign in to AFTER HOURS with that email and accept before play begins.`);
+      const idToken = await getFirebaseIdToken();
+      const response = await fetch('/api/invites/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ inviteId: inviteRef.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(result.error || 'The invitation was saved, but the email was not delivered. Use Copy invite link to share it.');
+        return;
+      }
+      setNotice(`${gameLabel(selectedGame)} invitation email accepted by the delivery service for ${recipientEmail}. They must sign in to AFTER HOURS with that email and accept before play begins.`);
     } catch (reason: any) {
-      setError(reason.message || 'The invitation could not be sent.');
+      setError(reason.message || 'The invitation could not be created.');
     } finally { setWorking(false); }
   };
 

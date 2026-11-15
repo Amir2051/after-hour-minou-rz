@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>AFTER HOURS</title>
+    <script>
+      // GitHub Pages serves this repository's source tree, not the compiled app.
+      // Send visitors to the live Cloud Run app while preserving invitation links.
+      if (window.location.hostname === 'amir2051.github.io' && window.location.pathname.startsWith('/after-hour-minou-rz')) {
+        window.location.replace('https://minou-rz-qdpm3vdneq-ue.a.run.app/' + window.location.search + window.location.hash);
+      }
+    </script>
     <meta name="description" content="Premium couples gaming platform. Two players. No limits. Just good times." />
     <meta property="og:title" content="AFTER HOURS" />
     <meta property="og:description" content="Premium couples gaming platform. Two players. No limits. Just good times." />
@@ -29,4 +36,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
